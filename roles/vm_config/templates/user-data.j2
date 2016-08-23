@@ -1,0 +1,358 @@
+#jinja2: lstrip_blocks: True
+{% extends "user-data-template.j2" %}
+
+{% block header %}{{super()-}}
+{% endblock header %}
+
+{% block passwd %}{{super()-}}
+{{self.passwd_all()-}}
+{% endblock passwd %}
+
+{% block runcmd %}{{super()-}}
+{#{{self.runcmd_DNS()-}}#}
+{{self.runcmd_NTP()-}}
+{{self.runcmd_hosts()-}}
+{% if vm_type == "ts" %}{{self.runcmd_license()-}}{% endif %}
+{{self.runcmd_keyboard()-}}
+{{self.runcmd_install_sw()-}}
+{{self.runcmd_snmp()-}}
+{{self.runcmd_esa()-}}
+{% if vm_type == "ddc" %}{{self.runcmd_datacache()-}}{% endif %}
+{% endblock runcmd %}
+
+{% block timezone %}{{super()-}}{% if vm_type != "mn" %}
+timezone: {{VM_TIMEZONE}}
+{% endif %}
+{% endblock timezone %}
+
+{% block write_files %}{{super()-}}
+{% if vm_type == "mn" %}{{self.write_file_init()-}}{% endif %}
+{% if vm_type == "ts" or vm_type == "ddc" %}{{self.write_file_bootstrap()-}}{% endif %}
+{% if vm_type == "ts" or vm_type == "ddc"%}{{self.write_file_networknames()-}}{% endif %}
+{{self.write_file_ifcfg_OAM()-}}
+{{self.write_file_ifcfg_Internal()-}}
+{% if vm_type == "ts" or vm_type == "ddc" %}{{self.write_file_ifcfg_Access()-}}{% endif %}
+{% if vm_type == "ts" %}{{self.write_file_ifcfg_Internet()-}}{% endif %}
+{% if vm_type == "ts" %}{{self.write_file_ifcfg_CPS()-}}{% endif %}
+{{self.write_file_routes()-}}
+{% endblock write_files %}
+
+{# ------------------------- self local blocks ------------------------ #}
+{% block passwd_all %}
+ list: |
+{% if vm_type == "mn" %}
+  root:wapwap12
+  miepadm:wapwap12
+  msausr:wapwap12
+  postgres:wapwap12
+  lighttpd:wapwap12
+{% elif vm_type == "ts" %}
+  root:wapwap12
+  miepadm:wapwap12
+  miepusr:wapwap12
+  msausr:wapwap12
+  postgres:wapwap12
+  lighttpd:wapwap12      
+{% elif vm_type == "ddc" %}
+  root:wapwap12
+  miepadm:wapwap12
+  miepusr:wapwap12
+  teladm:wapwap12
+  stackusr:wapwap12
+{% endif %}
+ expire: False
+{% endblock passwd_all %}
+
+{% block runcmd_DNS %}
+{% for server in IPV4_ADDRESS_OF_DNS_SERVERs %}
+ - [ sh, -xc, "/sbin/yast2 dns edit nameserver1={{ server }}" ]
+{% endfor %}
+{% endblock runcmd_DNS %}
+
+{% block runcmd_NTP %}
+{% for server in IPV4_ADDRESS_OF_NTP_SERVERs %}
+ - [ sh, -xc, "echo server {{server}} >> /etc/ntp.conf" ]
+{% endfor %}
+ - [ sh, -xc, "/etc/init.d/ntp start" ]
+ - [ sh, -xc, "chkconfig ntp on" ]
+{% endblock runcmd_NTP %}
+
+{% block runcmd_hosts %}
+ - [ sh, -xc, "echo {{ipaddr_oam}} {{vm_name}} >> /etc/hosts" ]
+{% endblock runcmd_hosts %}
+
+{% block runcmd_keyboard %}
+ - [ sh, -xc, "/sbin/yast2 keyboard set layout={{VM_keyboard}}" ]
+{% endblock runcmd_keyboard %}
+
+{% block runcmd_install_sw %}
+ - [ sh, -xc, "mkdir -p /mnt/customizations2" ]
+ - [ sh, -xc, "mount -o loop /dev/sr1 /mnt/customizations2" ]
+{% if vm_type == "mn" %}
+ - [ sh, -xc, "rm -rf /opt/open3ppSource" ]
+ - [ sh, -xc, "mkdir /opt/open3ppSource" ]
+ - [ sh, -xc, "cp /mnt/customizations2/foss_source/*.zip /opt/open3ppSource/." ]
+ - [ sh, -xc, "cp /opt/miep/tools/mnsetup/config.xml /opt/miep/tools/mnsetup/config.xml.orig" ]
+ - [ sh, -xc, "cp /mnt/customizations2/mn_setup/config.xml /opt/miep/tools/mnsetup/config.xml" ]
+ - [ sh, -xc, "cp /opt/miep/etc/ddc/distributed_data_cache.cfg /opt/miep/etc/ddc/distributed_data_cache.cfg.orig" ]
+ - [ sh, -xc, "cp /mnt/customizations2/mn_setup/distributed_data_cache.cfg /opt/miep/etc/ddc/distributed_data_cache.cfg" ]
+ - [ sh, -xc, "chown msausr:msagrp /opt/miep/tools/mnsetup/config.xml" ]
+ - [ sh, -xc, "rpm -ivh /mnt/customizations2/mn_setup/MSPwfafg*.rpm" ]
+ - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/esa*.rpm" ]
+ - [ sh, -xc, "sed -i 's/YPSAddress.*/YPSAddress\"\tvalue=\"https:\\/\\/{{ARWA_FQDN_AND_OPTIONAL_PORT}}\\/YPServer\" \\/>/' /opt/miep/etc/license/SentinelCloudRuntime.properties" ]
+ - [ sh, -xc, "/opt/miep/tools/mnsetup/initmn.sh firstinstall 2>&1 | tee /opt/miep/tools/mnsetup/firstinstall.log" ]
+ - [ sh, -xc, "/opt/miep/tools/mnsetup/initafgdashboard.sh 2>&1 | tee /opt/miep/tools/mnsetup/initafgdashboard.log" ]
+ - [ sh, -xc, "/opt/miep/tools/mnsetup/initmn.sh saveconfig 2>&1 | tee /opt/miep/tools/mnsetup/saveconfig.log" ]
+ - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/MSPesaconf*.rpm" ]
+ - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=mn NB_INTERFACE=2 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}}" ]
+{% elif vm_type == "ts" %}
+ - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/esa*.rpm" ]
+ - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/MSPesaconf*.rpm" ]
+ - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=ts NB_INTERFACE=5 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}}" ] 
+{% elif vm_type == "ddc" %}
+ - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/esa*.rpm" ]
+ - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/MSPesaconf*.rpm" ]
+ - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=ddc NB_INTERFACE=3 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} INTERNAL_IP_ADDRESS={{ipaddr_internal}}" ]
+{% endif %}
+ - [ sh, -xc, "umount /mnt/customizations2" ]
+{% endblock runcmd_install_sw %}
+
+{% block runcmd_snmp %}
+{% if vm_type == "mn" %}
+ - [ sh, -xc, "sed -i '/trap2sink.*public 8162/d' /etc/snmp/snmpd.conf" ] 
+ - [ sh, -xc, "echo trap2sink {{ipaddr_internal}} ESA-PC 8162 >> /etc/snmp/snmpd.conf" ]
+ - [ sh, -xc, "/etc/init.d/snmpd restart" ]
+{% else %}
+ - [ sh, -xc, "echo trap2sink {{ipaddr_internal}} ESA-PC 8162 >> /etc/snmp/snmpd.conf" ]
+ - [ sh, -xc, "/etc/init.d/snmpd restart" ] 
+{% endif %}
+{% endblock runcmd_snmp %}
+
+{% block runcmd_esa %}
+ - [ sh, -xc, "cp /usr/local/esa/conf/mainCfg.xml /usr/local/esa/conf/mainCfg.xml.orig" ]
+ - [ sh, -xc, "sed -i 's/<OAM_IP>/{{ipaddr_oam}}/g' /usr/local/esa/conf/mainCfg.xml" ]
+ - [ sh, -xc, "sed -i 's/<INTERNAL_IP>/{{ipaddr_internal}}/g' /usr/local/esa/conf/mainCfg.xml" ]
+{% if vm_type == "mn" %}
+ - [ sh, -xc, "sed -i 's/master=\"no\"/master=\"yes\"/g' /usr/local/esa/conf/mainCfg.xml" ]
+{% endif %}
+ - [ sh, -xc, "cp /usr/local/esa/conf/trapDestCfg.xml /usr/local/esa/conf/trapDestCfg.xml.orig" ]
+ - [ sh, -xc, "sed -i 's/CHANGE_IP/{{OPERATOR_NMS_IPV4}}/g' /usr/local/esa/conf/trapDestCfg.xml" ]
+ - [ sh, -xc, "cp /usr/local/esa/conf/clusterCfg.xml /usr/local/esa/conf/clusterCfg.xml.orig" ]
+ - [ sh, -xc, "sed -i 's/<INTERNAL_IP>/{{ipaddr_internal}}/g' /usr/local/esa/conf/clusterCfg.xml" ]
+ - [ sh, -xc, "echo '-Djava.net.preferIPv4Stack=true' >> /usr/local/esa/bin/esafma.vmoptions" ]
+ - [ sh, -xc, "service esama start" ]
+ - [ sh, -xc, "service esafma start" ]
+ - [ sh, -xc, "service esapma start" ]
+{% endblock runcmd_esa %}
+
+{% block runcmd_datacache %}
+ - [ sh, -xc, "/bin/rm -f /opt/miep/tools/dataCacheMgmt" ]
+{% endblock runcmd_datacache %}
+
+{% block runcmd_license %}
+{% for server in license_servers %}
+ - [ sh, -xc, "echo {{server.IPV4_ADDRESS_OF_LICENSE_SERVER}} {{server.HOSTNAME_OF_LICENSE_SERVER}} >> /etc/hosts" ]
+{% endfor %}
+{% endblock runcmd_license %}
+
+{% block write_file_init %}
+ - content: |
+    CAE_PASSWORD=wapwap12
+    MSA_PASSWORD=wapwap12
+    MSC_PASSWORD=wapwap12
+    MSP_PASSWORD=wapwap12
+    CAPLOG_PASSWORD=wapwap12
+    TRACELOG_PASSWORD=wapwap12
+    LIGHTTPD_USER=msausr
+    LIGHTTPD_PW=wapwap12
+    MN_OAM_IPADDR={{ipaddr_oam}}
+    MN_OAM_NETMASK={{ipnetmask_oam}}
+    MN_INTERNAL_IPADDR={{ipaddr_internal}}
+    MN_INTERNAL_NETMASK={{ipnetmask_internal}}
+    GW_IP_ADDR={{IPV4_DEFAULT_GATEWAY_OAM}}
+    SNMP_IPADDR={{ipaddr_internal}}
+    SNMP_PORT=8162
+    MN_SERVER_GROUPNAME={{CLUSTER_ID}}
+    STORAGE_TYPE=VMWARE
+    SUPPORT_LANG_LIST={en:English}
+    TIMEZONE={{VM_TIMEZONE}}
+    HOSTNAME={{vm_name}}
+    AUTOSTART=Y
+    AUTODBPATCH=Y
+    PRODUCT=AFG
+    CLOUDINIT=Y
+   path: /opt/miep/tools/mnsetup/init.properties
+   owner: root:root
+   permissions: 0755
+{% endblock write_file_init %}
+
+{% block write_file_bootstrap %}
+ - content: |
+    {
+     registrar : https://{{ipaddr_registrar}}:9443/api/,
+     clusterid : {{CLUSTER_ID}},
+     vmname : {{vm_name}},
+     basicauthuser: admin,
+     basicauthpwd: wapwap12
+    }
+   path: /opt/miep/init/bootstrap.json
+   owner: root:root
+   permissions: 0600
+{% endblock write_file_bootstrap %}
+
+{% block write_file_networknames %}
+ - content: | 
+    [
+    {
+     interfacename: eth0,
+     networkname: OAM
+    },
+    {
+     interfacename: eth1,
+     networkname: Internal
+    },    
+    {
+     interfacename: eth2,
+     networkname: Access
+    }{% if vm_type == "ts" %},
+    {
+     interfacename: eth3,
+     networkname: Internet
+    },
+    {
+     interfacename: eth4,
+     networkname: ControlPlaneSig
+    }{% endif %}
+    ]
+   path: /opt/miep/init/networknames.json
+   owner: root:root
+   permissions: 0600
+   {% endblock write_file_networknames %}
+
+{% block write_file_ifcfg_OAM %}
+ - content: |
+    BOOTPROTO=static
+    IPADDR={{ipaddr_oam}}
+    NETMASK={{ipnetmask_oam}}
+    ONBOOT=yes
+    STARTMODE=auto
+   path: /etc/sysconfig/network/ifcfg-eth0
+   owner: root:root
+   permissions: 0644
+{% endblock write_file_ifcfg_OAM %}
+
+{% block write_file_ifcfg_Internal %}
+ - content: |
+    BOOTPROTO=static
+    IPADDR={{ipaddr_internal}}
+    NETMASK={{ipnetmask_internal}}
+    ONBOOT=yes
+    STARTMODE=auto
+   path: /etc/sysconfig/network/ifcfg-eth1
+   owner: root:root
+   permissions: 0644
+{% endblock write_file_ifcfg_Internal %}
+
+{% block write_file_ifcfg_Access %}
+ - content: |
+    DEVICE=eth2
+    BOOTPROTO=static
+    ONBOOT=yes
+    BROADCAST=
+    ETHTOOL_OPTIONS=
+    IPADDR={{ipaddr_access}}
+    NETMASK={{ipnetmask_access}}
+    MTU=
+    NAME=
+    NETWORK=
+    REMOTE_IPADDR=
+    STARTMODE=auto
+    USERCONTROL=no
+   path: /etc/sysconfig/network/ifcfg-eth2
+   owner: root:root
+   permissions: 0644
+{% endblock write_file_ifcfg_Access %}
+
+{% block write_file_ifcfg_Internet %}
+ - content: |
+    DEVICE=eth3
+    BOOTPROTO=static
+    BROADCAST=
+    ETHTOOL_OPTIONS=
+    IPADDR={{ipaddr_internet}}
+    NETMASK={{ipnetmask_internet}}
+    MTU=
+    NAME=
+    NETWORK=
+    REMOTE_IPADDR=
+    STARTMODE=auto
+    USERCONTROL=no
+   path: /etc/sysconfig/network/ifcfg-eth3
+   owner: root:root
+   permissions: 0644
+{% endblock write_file_ifcfg_Internet %}
+
+{% block write_file_ifcfg_CPS %}
+ - content: |
+    DEVICE=eth4
+    BOOTPROTO=static
+    BROADCAST=
+    ETHTOOL_OPTIONS=
+    IPADDR={{ipaddr_cps}}
+    NETMASK={{ipnetmask_cps}}
+    MTU=
+    NAME=
+    NETWORK=
+    REMOTE_IPADDR=
+    STARTMODE=auto
+    USERCONTROL=no
+   path: /etc/sysconfig/network/ifcfg-eth4
+   owner: root:root
+   permissions: 0644
+{% endblock write_file_ifcfg_CPS %}
+
+{% block write_file_routes %}
+ - content: |
+{% if vm_type == "mn" or vm_type == "ddc" %}
+    default {{IPV4_DEFAULT_GATEWAY_OAM}} - -
+{% elif vm_type == "ts" %}
+    default {{IPV4_DEFAULT_GATEWAY_CPS}} 255.255.255.255 -
+    #OAM
+{% for item in IPV4_ADDR_OF_XDMSs %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
+{% endfor %}
+{% for item in IPV4_ADDRESS_OF_DNS_SERVERs %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
+{% endfor %}
+{% for item in IPV4_ADDRESS_OF_NTP_SERVERs %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
+{% endfor %}
+{% for item in ROUTES_OAM %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} -
+{% endfor %}
+    #Access
+{% for item in ROUTES_ACCESS %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_ACCESS}} -
+{% endfor %}
+    #CPS
+{% for item in IPV4_ADDR_OF_DNSENUMs %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_CPS}} 255.255.255.255 -
+{% endfor %}
+{% for item in IPV4_ADDR_OF_HSSes %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_CPS}} 255.255.255.255 -
+{% endfor %}
+{% for item in ROUTES_CPS %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_CPS}} -
+{% endfor %}
+    #Internet
+{% for item in ROUTES_ARWA %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_INTERNET}} 255.255.255.255 -
+{% endfor %}
+{% for item in ROUTES_INTERNET %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_INTERNET}} -
+{% endfor %}
+{% endif %}
+   path: /etc/sysconfig/network/routes
+   owner: root:root
+   permissions: 0644
+{% endblock write_file_routes %}
