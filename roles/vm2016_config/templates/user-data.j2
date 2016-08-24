@@ -11,7 +11,7 @@
 {% block runcmd %}{{super()-}}
 {{self.runcmd_sysctrl()-}}
 {{self.runcmd_hosts()-}}
-{{self.runcmd_DNS()-}}
+{#{self.runcmd_DNS()-}#}
 {{self.runcmd_NTP()-}}
 {{self.runcmd_agentmonitor()-}}
 {{self.runcmd_keyboard()-}}
@@ -21,6 +21,7 @@
 {{self.runcmd_install_sw()-}}
 {{self.runcmd_snmp()-}}
 {{self.runcmd_esa()-}}
+{% if vm_type == "ts" %}{{self.runcmd_init_miep()-}}{% endif %}
 {% if vm_type == "ddc" %}{{self.runcmd_datacache()-}}{% endif %}
 {% endblock runcmd %}
 
@@ -33,15 +34,19 @@ timezone: {{VM_TIMEZONE}}
 {{self.write_file_init()-}}
 {{self.write_file_init_sec()-}}
 {% endif %}
-{% if vm_type == "ts" or vm_type == "ddc" %}{{self.write_file_bootstrap()-}}{% endif %}
-{% if vm_type == "ts" or vm_type == "ddc" %}{{self.write_file_networknames()-}}{% endif %}
+{% if vm_type != "mn"  %}
+{{self.write_file_bootstrap()-}}
+{{self.write_file_networknames()-}}
+{% endif %}
 {{self.write_file_ifcfg_OAM()-}}
 {{self.write_file_ifcfg_Internal()-}}
 {% if vm_type == "ts" or vm_type == "ddc" %}{{self.write_file_ifcfg_Access()-}}{% endif %}
 {% if vm_type == "ts" %}{{self.write_file_ifcfg_Internet()-}}{% endif %}
 {% if vm_type == "ts" %}{{self.write_file_ifcfg_CPS()-}}{% endif %}
+{% if vm_type == "mon" %}{{self.write_file_switch_config()-}}{% endif %}
 {{self.write_file_routes()-}}
-{{self.write_file_clusters()-}}
+{% if vm_type == "mn" %}{{self.write_file_clusters()-}}{% endif %}
+{{self.write_file_10_local()-}}
 {% endblock write_files %}
 
 {% block power_state %}{{super()-}}
@@ -51,29 +56,16 @@ timezone: {{VM_TIMEZONE}}
 {# ----------------------------------- self local blocks ---------------------------------- #}
 {% block passwd_all %}
  list: |
-{% if vm_type == "mn" %}
   root:wapwap12
   miepadm:wapwap12
-{% elif vm_type == "ts" %}
-  root:wapwap12
-  miepadm:wapwap12
-  miepusr:wapwap12
-  msausr:wapwap12
-  postgres:wapwap12
-  lighttpd:wapwap12      
-{% elif vm_type == "ddc" %}
-  root:wapwap12
-  miepadm:wapwap12
-  miepusr:wapwap12
-  teladm:wapwap12
-  stackusr:wapwap12
-{% endif %}
  expire: False
 {% endblock passwd_all %}
 
 {% block runcmd_sysctrl %}
+{% if vm_type == "mn" %}
  - [ sh, -xc, "sed -i 's/^.*:.*/admin:6041A28W2rLq6/' /opt/miep/tools/lighttpd/lighttpd_auth.properties" ]
  - [ sh, -xc, "sed -i 's/^.*=.*/admin=709e17d2a62751a051fa2072f0976334/' /opt/miep/register/conf/auth.properties" ]
+{% endif %}
  - [ sh, -xc, "echo \" \n\" >> /etc/sysctl.conf" ]
 {% endblock runcmd_sysctrl %}
 
@@ -97,8 +89,10 @@ timezone: {{VM_TIMEZONE}}
 
 {% block runcmd_agentmonitor %}
  - [ sh, -xc, "sed -i 's/^    SNMPCOMMUNITY=.*/    SNMPCOMMUNITY=\"publicMiep\"/' /opt/miep/snmp/tools/agentmonitor.sh" ]
+{% if vm_type == "mn" %}
  - [ sh, -xc, "sed -i 's/snmptrap -v 1 -c public ${SNMP_IPADDR}:${SNMP_PORT}/snmptrap -v 2c -c publicMiep ${SNMP_IPADDR}:${SNMP_PORT} \"\" $mpeAlarmSet/g' /opt/miep/snmp/tools/MonitorFunctions.sh" ]
  - [ sh, -xc, "sed -i '/$mpeAlarmSet localhost 5 s /d' /opt/miep/snmp/tools/MonitorFunctions.sh" ]
+{% endif %}
  - [ sh, -xc, "/etc/init.d/network restart" ]
 {% endblock runcmd_agentmonitor %}
 
@@ -129,15 +123,20 @@ timezone: {{VM_TIMEZONE}}
  - [ sh, -xc, "su -s /bin/bash - msausr -c \"chmod 755 /opt/miep/tools/mnsetup/initafgdashboard.sh\"" ]
  - [ sh, -xc, "su -s /bin/bash - msausr -c /opt/miep/tools/mnsetup/initafgdashboard.sh" ]
  - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/MSPesaconf*.rpm" ]
+{% endif %}
+{% if vm_type != "mn" %}
+ - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/esa*.rpm" ]
+ - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/MSPesaconf*.rpm" ]
+ - [ sh, -xc, "[ -f /mnt/customizations2/scripts/expandisk.sh ] && /mnt/customizations2/scripts/expandisk.sh" ] 
+{% endif %}
+{% if vm_type == "mn" %}
  - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=mn NB_INTERFACE=2 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} | tee /var/log/hardening.log" ]
 {% elif vm_type == "ts" %}
- - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/esa*.rpm" ]
- - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/MSPesaconf*.rpm" ]
- - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=ts NB_INTERFACE=5 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}}" ] 
+ - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=ts NB_INTERFACE=5 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} | tee /var/log/hardening.log" ]
 {% elif vm_type == "ddc" %}
- - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/esa*.rpm" ]
- - [ sh, -xc, "rpm -ivh /mnt/customizations2/software/MSPesaconf*.rpm" ]
  - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=ddc NB_INTERFACE=3 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} INTERNAL_IP_ADDRESS={{ipaddr_internal}}" ]
+{% elif vm_type == "mon" %}
+ - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=mon NB_INTERFACE=2 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} INTERNAL_IP_ADDRESS={{ipaddr_internal}}" ]
 {% endif %}
  - [ sh, -xc, "umount /mnt/customizations2" ]
 {% endblock runcmd_install_sw %}
@@ -169,6 +168,11 @@ timezone: {{VM_TIMEZONE}}
  - [ sh, -xc, "service esafma start" ]
  - [ sh, -xc, "service esapma start" ]
 {% endblock runcmd_esa %}
+
+{% block runcmd_init_miep %}
+ - [ sh, -xc, "insserv init.miep" ]
+ - [ sh, -xc, "/etc/init.d/init.miep start" ]
+{% endblock runcmd_init_miep %} 
 
 {% block runcmd_datacache %}
  - [ sh, -xc, "/bin/rm -f /opt/miep/tools/dataCacheMgmt" ]
@@ -211,44 +215,44 @@ timezone: {{VM_TIMEZONE}}
 {% block write_file_bootstrap %}
  - content: |
     {
-     registrar : https://{{ipaddr_registrar}}:9443/api/,
-     clusterid : {{CLUSTER_ID}},
-     vmname : {{vm_name}},
-     basicauthuser: admin,
-     basicauthpwd: wapwap12
+     "registrar": "https://{{ipaddr_registrar}}:9443/api/",
+     "clusterid": "{{CLUSTER_ID}}",
+     "vmname": "{{vm_name}}",
+     "basicauthuser": "admin",
+     "basicauthpwd": "wapwap12"
     }
    path: /opt/miep/init/bootstrap.json
    owner: root:root
-   permissions: 0600
+   permissions: 0640
 {% endblock write_file_bootstrap %}
 
 {% block write_file_networknames %}
- - content: | 
+ - content: |
     [
     {
-     interfacename: eth0,
-     networkname: OAM
+     "interfacename": "eth0",
+     "networkname": "OAM"
     },
     {
-     interfacename: eth1,
-     networkname: Internal
-    },    
+     "interfacename": "eth1",
+     "networkname": "Internal"
+    }{% if vm_type == "ts" or vm_type == "ddc" %},
     {
-     interfacename: eth2,
-     networkname: Access
-    }{% if vm_type == "ts" %},
+     "interfacename": "eth2",
+     "networkname": "Access"
+    }{%endif%}{% if vm_type == "ts" %},
     {
-     interfacename: eth3,
-     networkname: Internet
+     "interfacename": "eth3",
+     "networkname": "Internet"
     },
     {
-     interfacename: eth4,
-     networkname: ControlPlaneSig
-    }{% endif %}
+     "interfacename": "eth4",
+     "networkname": "ControlPlaneSig"
+    }{% endif %} 
     ]
    path: /opt/miep/init/networknames.json
    owner: root:root
-   permissions: 0600
+   permissions: '0644'
    {% endblock write_file_networknames %}
 
 {% block write_file_ifcfg_OAM %}
@@ -260,77 +264,83 @@ timezone: {{VM_TIMEZONE}}
     USERCONTROL=no
    path: /etc/sysconfig/network/ifcfg-eth0
    owner: root:root
-   permissions: 0644
+   permissions: '0644'
 {% endblock write_file_ifcfg_OAM %}
 
 {% block write_file_ifcfg_Internal %}
  - content: |
-    BOOTPROTO=static
-    IPADDR={{ipaddr_internal}}
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_internal}}'
     NETMASK={{ipnetmask_internal}}
-    STARTMODE=onboot
+    STARTMODE='onboot'
+    USERCONTROL='no'    
    path: /etc/sysconfig/network/ifcfg-eth1
    owner: root:root
-   permissions: 0644
+   permissions: '0644'
 {% endblock write_file_ifcfg_Internal %}
 
 {% block write_file_ifcfg_Access %}
  - content: |
-    DEVICE=eth2
-    BOOTPROTO=static
-    ONBOOT=yes
-    BROADCAST=
-    ETHTOOL_OPTIONS=
-    IPADDR={{ipaddr_access}}
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_access}}'
     NETMASK={{ipnetmask_access}}
-    MTU=
-    NAME=
-    NETWORK=
-    REMOTE_IPADDR=
-    STARTMODE=auto
-    USERCONTROL=no
+    STARTMODE='onboot'
+    USERCONTROL='no'
    path: /etc/sysconfig/network/ifcfg-eth2
    owner: root:root
-   permissions: 0644
+   permissions: '0644'
 {% endblock write_file_ifcfg_Access %}
 
 {% block write_file_ifcfg_Internet %}
  - content: |
-    DEVICE=eth3
-    BOOTPROTO=static
-    BROADCAST=
-    ETHTOOL_OPTIONS=
-    IPADDR={{ipaddr_internet}}
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_internet}}'
     NETMASK={{ipnetmask_internet}}
-    MTU=
-    NAME=
-    NETWORK=
-    REMOTE_IPADDR=
-    STARTMODE=auto
-    USERCONTROL=no
+    STARTMODE='onboot'
+    USERCONTROL='no'
    path: /etc/sysconfig/network/ifcfg-eth3
    owner: root:root
-   permissions: 0644
+   permissions: '0644'
 {% endblock write_file_ifcfg_Internet %}
 
 {% block write_file_ifcfg_CPS %}
  - content: |
-    DEVICE=eth4
-    BOOTPROTO=static
-    BROADCAST=
-    ETHTOOL_OPTIONS=
-    IPADDR={{ipaddr_cps}}
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_cps}}'
     NETMASK={{ipnetmask_cps}}
-    MTU=
-    NAME=
-    NETWORK=
-    REMOTE_IPADDR=
-    STARTMODE=auto
-    USERCONTROL=no
+    STARTMODE='onboot'
+    USERCONTROL='no'
    path: /etc/sysconfig/network/ifcfg-eth4
    owner: root:root
-   permissions: 0644
+   permissions: '0644'
 {% endblock write_file_ifcfg_CPS %}
+
+{% block write_file_switch_config %}
+ - content: |
+    [
+    {
+    "username": "root",
+    "password": "wapwap12",
+    "host": "192.168.10.2",
+    "port": "8443",
+    "routerid_access": "VR-accessPOD60",
+    "routerid_internet": "VR-internetPOD60",
+    "tenant_name": "None"
+    },
+    {
+    "username": "root",
+    "password": "wapwap12",
+    "host": "192.168.10.3",
+    "port": "8443",
+    "routerid_access": "VR-accessPOD60",
+    "routerid_internet": "VR-internetPOD60",
+    "tenant_name": "None"
+    }
+    ]
+   path: /opt/miep/slbspv/SwitchConfig.json
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_switch_config %}
 
 {% block write_file_routes %}
  - content: |
@@ -375,7 +385,7 @@ timezone: {{VM_TIMEZONE}}
 {% endif %}
    path: /etc/sysconfig/network/routes
    owner: root:root
-   permissions: 0644
+   permissions: '0644'
 {% endblock write_file_routes %}
 
 {% block write_file_clusters %}
@@ -383,8 +393,16 @@ timezone: {{VM_TIMEZONE}}
    path: /opt/miep/msaapp/apps/clusteradmin/clusters.json
    encoding: b64
    owner: msausr:msagrp
-   permissions: 0640
+   permissions: '0640'
 {% endblock write_file_clusters %}
+
+{% block write_file_10_local %}
+ - content:
+   path: /etc/udev/rules.d/10-local.rules
+   encoding: b64
+   owner: root:root
+   permissions: '0640'
+{% endblock write_file_10_local %}
 
 {% block reboot %}
  mode: reboot
