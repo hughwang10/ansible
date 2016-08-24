@@ -29,18 +29,26 @@ timezone: {{VM_TIMEZONE}}
 {% endblock timezone %}
 
 {% block write_files %}{{super()-}}
-{% if vm_type == "mn" %}{{self.write_file_init()-}}{% endif %}
+{% if vm_type == "mn" %}
+{{self.write_file_init()-}}
+{{self.write_file_init_sec()-}}
+{% endif %}
 {% if vm_type == "ts" or vm_type == "ddc" %}{{self.write_file_bootstrap()-}}{% endif %}
-{% if vm_type == "ts" or vm_type == "ddc"%}{{self.write_file_networknames()-}}{% endif %}
+{% if vm_type == "ts" or vm_type == "ddc" %}{{self.write_file_networknames()-}}{% endif %}
 {{self.write_file_ifcfg_OAM()-}}
 {{self.write_file_ifcfg_Internal()-}}
 {% if vm_type == "ts" or vm_type == "ddc" %}{{self.write_file_ifcfg_Access()-}}{% endif %}
 {% if vm_type == "ts" %}{{self.write_file_ifcfg_Internet()-}}{% endif %}
 {% if vm_type == "ts" %}{{self.write_file_ifcfg_CPS()-}}{% endif %}
 {{self.write_file_routes()-}}
+{{self.write_file_clusters()-}}
 {% endblock write_files %}
 
-{# ------------------------- self local blocks ------------------------ #}
+{% block power_state %}{{super()-}}
+{{self.reboot()-}}
+{% endblock power_state %}
+
+{# ----------------------------------- self local blocks ---------------------------------- #}
 {% block passwd_all %}
  list: |
 {% if vm_type == "mn" %}
@@ -174,34 +182,31 @@ timezone: {{VM_TIMEZONE}}
 
 {% block write_file_init %}
  - content: |
-    CAE_PASSWORD=wapwap12
-    MSA_PASSWORD=wapwap12
-    MSC_PASSWORD=wapwap12
-    MSP_PASSWORD=wapwap12
-    CAPLOG_PASSWORD=wapwap12
-    TRACELOG_PASSWORD=wapwap12
-    LIGHTTPD_USER=msausr
-    LIGHTTPD_PW=wapwap12
-    MN_OAM_IPADDR={{ipaddr_oam}}
-    MN_OAM_NETMASK={{ipnetmask_oam}}
-    MN_INTERNAL_IPADDR={{ipaddr_internal}}
-    MN_INTERNAL_NETMASK={{ipnetmask_internal}}
-    GW_IP_ADDR={{IPV4_DEFAULT_GATEWAY_OAM}}
-    SNMP_IPADDR={{ipaddr_internal}}
+    MN_OAM_IPADDR={{IPV4_ADDRESS_OF_OAM_MN}}
+    MN_INTERNAL_IPADDR={{IPV4_ADDRESS_OF_INTERNAL_MN}}
+    SNMP_IPADDR={{IPV4_ADDRESS_OF_INTERNAL_MN}}
     SNMP_PORT=8162
     MN_SERVER_GROUPNAME={{CLUSTER_ID}}
     STORAGE_TYPE=VMWARE
     SUPPORT_LANG_LIST={en:English}
-    TIMEZONE={{VM_TIMEZONE}}
-    HOSTNAME={{vm_name}}
     AUTOSTART=Y
     AUTODBPATCH=Y
     PRODUCT=AFG
-    CLOUDINIT=Y
    path: /opt/miep/tools/mnsetup/init.properties
    owner: root:root
-   permissions: 0755
+   permissions: 0640 
 {% endblock write_file_init %}
+
+{% block write_file_init_sec %}
+ - content: |
+    CAE_PASSWORD=wapwap12
+    MSA_PASSWORD=wapwap12
+    CAPLOG_PASSWORD=wapwap12
+    TRACELOG_PASSWORD=wapwap12
+   path: /opt/miep/tools/mnsetup/init.properties.sec
+   owner: root:root
+   permissions: 0640
+{% endblock write_file_init_sec %}
 
 {% block write_file_bootstrap %}
  - content: |
@@ -251,8 +256,8 @@ timezone: {{VM_TIMEZONE}}
     BOOTPROTO=static
     IPADDR={{ipaddr_oam}}
     NETMASK={{ipnetmask_oam}}
-    ONBOOT=yes
-    STARTMODE=auto
+    STARTMODE=onboot
+    USERCONTROL=no
    path: /etc/sysconfig/network/ifcfg-eth0
    owner: root:root
    permissions: 0644
@@ -263,8 +268,7 @@ timezone: {{VM_TIMEZONE}}
     BOOTPROTO=static
     IPADDR={{ipaddr_internal}}
     NETMASK={{ipnetmask_internal}}
-    ONBOOT=yes
-    STARTMODE=auto
+    STARTMODE=onboot
    path: /etc/sysconfig/network/ifcfg-eth1
    owner: root:root
    permissions: 0644
@@ -373,3 +377,17 @@ timezone: {{VM_TIMEZONE}}
    owner: root:root
    permissions: 0644
 {% endblock write_file_routes %}
+
+{% block write_file_clusters %}
+ - content: WwogIHsKICAgICJwYXJlbnQiIDogInJvb3QiLAogICAgImdyb3VwcyIgOiBbCiAgICAgIHsKICAgICAgICAiZ3JvdXBuYW1lIiA6ICJUZXN0IiwKICAgICAgICAiZGlzcGxheW5hbWUiIDogIlRlc3QiLAogICAgICAgICJkZXNjcmlwdGlvbiIgOiAiVGVzdCBDbHVzdGVyIgogICAgICB9CiAgICBdCiAgfQpd
+   path: /opt/miep/msaapp/apps/clusteradmin/clusters.json
+   encoding: b64
+   owner: msausr:msagrp
+   permissions: 0640
+{% endblock write_file_clusters %}
+
+{% block reboot %}
+ mode: reboot
+ message: Server will reboot now
+ timeout: 5
+{% endblock reboot %} 
