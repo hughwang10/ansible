@@ -192,13 +192,13 @@ timezone: {{VM_TIMEZONE}}
     SNMP_PORT=8162
     MN_SERVER_GROUPNAME={{CLUSTER_ID}}
     STORAGE_TYPE=VMWARE
-    SUPPORT_LANG_LIST={en:English}
+    SUPPORT_LANG_LIST={"en":"English"}
     AUTOSTART=Y
     AUTODBPATCH=Y
     PRODUCT=AFG
    path: /opt/miep/tools/mnsetup/init.properties
    owner: root:root
-   permissions: 0640 
+   permissions: '0640' 
 {% endblock write_file_init %}
 
 {% block write_file_init_sec %}
@@ -209,7 +209,7 @@ timezone: {{VM_TIMEZONE}}
     TRACELOG_PASSWORD=wapwap12
    path: /opt/miep/tools/mnsetup/init.properties.sec
    owner: root:root
-   permissions: 0640
+   permissions: '0640'
 {% endblock write_file_init_sec %}
 
 {% block write_file_bootstrap %}
@@ -223,7 +223,7 @@ timezone: {{VM_TIMEZONE}}
     }
    path: /opt/miep/init/bootstrap.json
    owner: root:root
-   permissions: 0640
+   permissions: '0640'
 {% endblock write_file_bootstrap %}
 
 {% block write_file_networknames %}
@@ -257,11 +257,11 @@ timezone: {{VM_TIMEZONE}}
 
 {% block write_file_ifcfg_OAM %}
  - content: |
-    BOOTPROTO=static
-    IPADDR={{ipaddr_oam}}
-    NETMASK={{ipnetmask_oam}}
-    STARTMODE=onboot
-    USERCONTROL=no
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_oam}}'
+    NETMASK='{{ipnetmask_oam}}'
+    STARTMODE='onboot'
+    USERCONTROL='no'
    path: /etc/sysconfig/network/ifcfg-eth0
    owner: root:root
    permissions: '0644'
@@ -271,7 +271,7 @@ timezone: {{VM_TIMEZONE}}
  - content: |
     BOOTPROTO='static'
     IPADDR='{{ipaddr_internal}}'
-    NETMASK={{ipnetmask_internal}}
+    NETMASK='{{ipnetmask_internal}}'
     STARTMODE='onboot'
     USERCONTROL='no'    
    path: /etc/sysconfig/network/ifcfg-eth1
@@ -283,7 +283,7 @@ timezone: {{VM_TIMEZONE}}
  - content: |
     BOOTPROTO='static'
     IPADDR='{{ipaddr_access}}'
-    NETMASK={{ipnetmask_access}}
+    NETMASK='{ipnetmask_access}}'
     STARTMODE='onboot'
     USERCONTROL='no'
    path: /etc/sysconfig/network/ifcfg-eth2
@@ -295,7 +295,7 @@ timezone: {{VM_TIMEZONE}}
  - content: |
     BOOTPROTO='static'
     IPADDR='{{ipaddr_internet}}'
-    NETMASK={{ipnetmask_internet}}
+    NETMASK='{{ipnetmask_internet}}'
     STARTMODE='onboot'
     USERCONTROL='no'
    path: /etc/sysconfig/network/ifcfg-eth3
@@ -307,7 +307,7 @@ timezone: {{VM_TIMEZONE}}
  - content: |
     BOOTPROTO='static'
     IPADDR='{{ipaddr_cps}}'
-    NETMASK={{ipnetmask_cps}}
+    NETMASK='{ipnetmask_cps}}'
     STARTMODE='onboot'
     USERCONTROL='no'
    path: /etc/sysconfig/network/ifcfg-eth4

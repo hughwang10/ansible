@@ -11,3 +11,15 @@
   register: vsphere_live_hosts
 
 - debug: msg="{{vsphere_live_hosts}}"
+
+- name: msg="Find the VM"
+  vsphere_find_vm:
+    vcenter: "{{ vsphere_vcenter }}"
+    vcusername: "{{ vsphere_vcusername }}"
+    vcpassword: "{{ vsphere_vcpassword }}"
+    datacenter: "{{ vsphere_datacenter }}"
+    datastore: "{{ deploy_datastore }}"
+    esxihostname: "{{ execution_host }}"
+    vm_name: "{{ vm_name_deploy }}"
+    folder_name: "{{ clusterid }}{{ system_versiontag }}"
+  register: deployed_vm
