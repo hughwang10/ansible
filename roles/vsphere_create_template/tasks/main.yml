@@ -1,0 +1,58 @@
+---
+- name: msg="Create a guest template MON MN"
+  vsphere_guest:
+    vcenter_hostname: "{{ vsphere_vcenter }}"
+    username: "{{ vsphere_vcusername }}"
+    password: "{{ vsphere_vcpassword }}"
+    guest: "{{ template_name }}"
+    validate_certs: False
+    state: present
+    vm_extra_config:
+      vcpu.hotadd: no
+      mem.hotadd:  no
+      notes: "This is a VM for AFG {{ template_name }}"
+    vm_disk:
+      disk1:
+        size_gb: 30
+        type: thin
+        datastore: "{{ vsphere_datastore }}"
+      disk2:
+        size_gb: 20
+        type: thin
+        datastore: "{{ vsphere_datastore }}"
+      disk3:
+        size_gb: 20
+        type: thin
+        datastore: "{{ vsphere_datastore }}"
+      disk4:
+        size_gb: 20
+        type: thin
+        datastore: "{{ vsphere_datastore }}"
+      disk5:
+        size_gb: 20
+        type: thin
+        datastore: "{{ vsphere_datastore }}"
+    vm_nic:
+      nic1:
+        type: vmxnet3
+        network: OAM
+        network_type: standard
+      nic2:
+        type: vmxnet3
+        network: Internal
+        network_type: standard
+    vm_hardware:
+      memory_mb: 4096
+      num_cpus: 2
+      osid: sles11_64Guest
+      scsi: lsi
+      vm_cdrom:
+        type: "iso"
+        iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+    esxi:
+      datacenter: "{{ vsphere_datacenter }}"
+      datastore: "{{ vsphere_datastore }}"
+      hostname: "{{ vsphere_esxihostname }}"
+
+
+

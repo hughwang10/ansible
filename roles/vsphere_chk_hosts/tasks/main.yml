@@ -1,0 +1,16 @@
+---
+- debug: msg="this is vsphere test for {{ vsphere_vcenter }}"
+
+- name: "Get esxi hosts and resource pools from connected vSphere" 
+  action:  
+    module: vsphere_list_hosts
+    vcenter: "{{ vsphere_vcenter }}"
+    vcusername: "{{ vsphere_vcusername }}"
+    vcpassword: "{{ vsphere_vcpassword }}"
+    datacenter: "{{ vsphere_datacenter }}"
+  register: vsphere_hosts
+
+- debug: msg="{{vsphere_hosts}}"
+
+
+
