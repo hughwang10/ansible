@@ -1,4 +1,2 @@
 ---
-template_name: "{{ vm_type }}_template"
-vsphere_datastore: "{{deploy_datastore}}"
-vsphere_esxihostname: "{{execution_host}}"
+

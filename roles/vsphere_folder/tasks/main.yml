@@ -1,0 +1,15 @@
+---
+- name: Create Folder
+  action:
+    module: vsphere
+    host: "{{ vsphere_vcenter }}"
+    login: "{{ vsphere_vcusername }}"
+    password: "{{ vsphere_vcpassword }}"
+    datacenter: "{{ vsphere_datacenter }}"
+    timeout: 60
+    folder: 
+      name: "{{ folder_name }}"
+      state: present
+
+
+

@@ -1,0 +1,15 @@
+---
+- name: Create a guest template MON MN
+  vsphere_guest:
+    vcenter_hostname: "{{ vsphere_vcenter }}"
+    username: "{{ vsphere_vcusername }}"
+    password: "{{ vsphere_vcpassword }}"
+    guest: "{{ deploy_vm_name }}"
+    validate_certs: False
+    from_template: yes
+    template_src: "{{ template_name }}"
+    esxi:
+      datacenter: "{{ vsphere_datacenter }}"
+      datastore: "{{ vsphere_datastore }}"
+      hostname: "{{ vsphere_esxihostname }}"
+    power_on_after_clone: False  

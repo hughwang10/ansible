@@ -1,0 +1,14 @@
+---
+- name: Task to gather facts from a vSphere cluster only if the system is a VMWare guest
+  vsphere_guest:
+    vcenter_hostname: "{{ vsphere_vcenter }}"
+    username: "{{ vsphere_vcusername }}"
+    password: "{{ vsphere_vcpassword }}"
+    guest: "{{vm_type}}_template"
+    vmware_guest_facts: yes
+    validate_certs: False
+  register: result
+  
+- debug: msg="{{result}}"    
+
+

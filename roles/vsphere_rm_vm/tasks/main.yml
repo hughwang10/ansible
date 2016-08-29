@@ -1,5 +1,5 @@
 ---
-- name: msg="Find the VM"
+- name: Check if the vm exist
   vsphere_find_vm:
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
@@ -11,7 +11,7 @@
     folder_name: ""
   register: deployed_template
 
-- name: msg="Clean possible existing template"
+- name: Clean existing template
   vsphere_guest:
     vcenter_hostname: "{{ vsphere_vcenter }}"
     username: "{{ vsphere_vcusername }}"

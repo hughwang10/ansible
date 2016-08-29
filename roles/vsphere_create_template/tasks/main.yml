@@ -1,5 +1,5 @@
 ---
-- name: msg="Create a guest template MON MN"
+- name: Create a guest template MON MN
   vsphere_guest:
     vcenter_hostname: "{{ vsphere_vcenter }}"
     username: "{{ vsphere_vcusername }}"
@@ -53,6 +53,3 @@
       datacenter: "{{ vsphere_datacenter }}"
       datastore: "{{ vsphere_datastore }}"
       hostname: "{{ vsphere_esxihostname }}"
-
-
-
