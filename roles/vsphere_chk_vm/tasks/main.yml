@@ -4,7 +4,7 @@
     vcenter_hostname: "{{ vsphere_vcenter }}"
     username: "{{ vsphere_vcusername }}"
     password: "{{ vsphere_vcpassword }}"
-    guest: "{{vm_type}}_template"
+    guest: "{{deploy_vm_name}}"
     vmware_guest_facts: yes
     validate_certs: False
   register: result
