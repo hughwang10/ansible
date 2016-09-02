@@ -18,6 +18,7 @@
 
 # TODO:
 # Ability to set CPU/Memory reservations
+# Hugh Wang pa1: add one more cdrom
 
 try:
     import json
@@ -370,7 +371,7 @@ def add_disk(module, s, config_target, config, devices, datastore, type="thin", 
     devices.append(disk_spec)
 
 
-def add_cdrom(module, s, config_target, config, devices, default_devs, type="client", vm_cd_iso_path=None):
+def add_cdrom(module, s, config_target, config, devices, default_devs, ele_key, ele_unitnum, type="client", vm_cd_iso_path=None):
     # Add a cd-rom
     # Make sure the datastore exists.
     if vm_cd_iso_path:
@@ -398,9 +399,9 @@ def add_cdrom(module, s, config_target, config, devices, default_devs, type="cli
             iso.set_element_datastore(ds_ref)
             iso.set_element_fileName("%s %s" % (datastore, iso_path))
             cd_ctrl.set_element_backing(iso)
-            cd_ctrl.set_element_key(20)
+            cd_ctrl.set_element_key(ele_key)
             cd_ctrl.set_element_controllerKey(ide_ctlr.get_element_key())
-            cd_ctrl.set_element_unitNumber(0)
+            cd_ctrl.set_element_unitNumber(ele_unitnum)
             cd_spec.set_element_device(cd_ctrl)
         elif type == "client":
             client = VI.ns0.VirtualCdromRemoteAtapiBackingInfo_Def(
@@ -1360,10 +1361,21 @@ def create_vm(vsphere_client, module, esxi, resource_pool, cluster_name, guest, 
             disk_num = disk_num + 1
             disk_key = disk_key + 1
     if 'vm_cdrom' in vm_hardware:
-        cdrom_type, cdrom_iso_path = get_cdrom_params(module, vsphere_client, vm_hardware['vm_cdrom'])
+      """
+      cdrom_type, cdrom_iso_path = get_cdrom_params(module, vsphere_client, vm_hardware['vm_cdrom'])
         # Add a CD-ROM device to the VM.
-        add_cdrom(module, vsphere_client, config_target, config, devices,
-                  default_devs, cdrom_type, cdrom_iso_path)
+      ele_unitnum = 0  
+      ele_key = 20 + ele_unitnum  
+      add_cdrom(module, vsphere_client, config_target, config, devices, default_devs, ele_key,ele_unitnum,cdrom_type, cdrom_iso_path)      
+      """            
+      # hugh start
+      for cdrom in sorted(vm_hardware['vm_cdrom']): 
+        cdrom_type, cdrom_iso_path = get_cdrom_params(module, vsphere_client, cdrom)
+        # Add a CD-ROM device to the VM.
+        ele_unitnum = vm_hardware['vm_cdrom'].index(cdrom) 
+        ele_key = 20 + ele_unitnum 
+        add_cdrom(module, vsphere_client, config_target, config, devices, default_devs, ele_key,ele_unitnum, cdrom_type, cdrom_iso_path)
+      #hugh end      
     if 'vm_floppy' in vm_hardware:
         floppy_image_path = None
         floppy_type = None

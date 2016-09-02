@@ -1,6 +1,6 @@
 ---
 - name: Create a guest template MON MN
-  vsphere_guest:
+  hw_vsphere_guest:
     vcenter_hostname: "{{ vsphere_vcenter }}"
     username: "{{ vsphere_vcusername }}"
     password: "{{ vsphere_vcpassword }}"
@@ -47,9 +47,13 @@
       osid: sles11_64Guest
       scsi: lsi
       vm_cdrom:
-        type: "iso"
-        iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+        - cdrom1:
+          type: "iso"
+          iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+        - cdrom2:
+          type: "iso"
+          iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
     esxi:
       datacenter: "{{ vsphere_datacenter }}"
       datastore: "{{ vsphere_datastore }}"
-      hostname: "{{ vsphere_esxihostname }}"
+      hostname: "{{ vsphere_esxihostname }}" 
