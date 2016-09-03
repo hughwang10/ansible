@@ -1,0 +1,24 @@
+---
+- name: create directory "{{vmdk_images_dir}}"
+  file: path="{{vmdk_images_dir}}" state=directory mode=0755
+
+- name: check if {{vmdk_name}} exist
+  stat: path="{{vmdk_images_dir}}/{{vmdk_name}}"
+  register: rst    
+
+- name: copy {{vmdk_name}}.gz if not exists
+  command: cp "{{vmdk_gz_images_dir}}/{{vmdk_name}}.gz" .
+  args:
+    chdir: "{{vmdk_images_dir}}"
+  when: not rst.stat.exists
+
+- name: gunzip {{vmdk_name}}.gz files
+  command: gunzip "{{vmdk_name}}.gz"
+  args:
+    chdir: "{{vmdk_images_dir}}"
+  async: 45
+  poll: 3
+  when: not rst.stat.exists
+
+
+
