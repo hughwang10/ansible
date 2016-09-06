@@ -1,17 +1,52 @@
----
-# VMDK uploaded manually due to long time
-#directory: /vsphere_file_root_path/images
-- name: Mount vmdk root file system
+
+- name: Mount vmdk root file system for MN
   action:
     module: vsphere_attach_disk
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"
-    vm_name: "{{ template_name }}"
+    vm_name: mn_template
     datacenter: "{{ vsphere_datacenter }}"
     datastore: "{{ vsphere_datastore }}"
     esxihostname: "{{ vsphere_esxihostname }}"
     disk_file_path: "/images/MSP7.1_MN.x86_64-R2E-11.20160407.vmdk"
+  when: "'mn' in vm_types" 
 
+- name: Mount vmdk root file system for TS
+  action:
+    module: vsphere_attach_disk
+    vcenter: "{{ vsphere_vcenter }}"
+    vcusername: "{{ vsphere_vcusername }}"
+    vcpassword: "{{ vsphere_vcpassword }}"
+    vm_name: ts_template
+    datacenter: "{{ vsphere_datacenter }}"
+    datastore: "{{ vsphere_datastore }}"
+    esxihostname: "{{ vsphere_esxihostname }}"
+    disk_file_path: "/images/AFG16_TS.x86_64-R1A24.20160421_104557.vmdk"
+  when: "'ts' in vm_types"  
 
+- name: Mount vmdk root file system for DDC
+  action:
+    module: vsphere_attach_disk
+    vcenter: "{{ vsphere_vcenter }}"
+    vcusername: "{{ vsphere_vcusername }}"
+    vcpassword: "{{ vsphere_vcpassword }}"
+    vm_name: ddc_template
+    datacenter: "{{ vsphere_datacenter }}"
+    datastore: "{{ vsphere_datastore }}"
+    esxihostname: "{{ vsphere_esxihostname }}"
+    disk_file_path: "/images/MSP7.1_DDC.x86_64-R2E-10.20160407.vmdk"
+  when: "'ddc' in vm_types"  
 
+- name: Mount vmdk root file system for MON
+  action:
+    module: vsphere_attach_disk
+    vcenter: "{{ vsphere_vcenter }}"
+    vcusername: "{{ vsphere_vcusername }}"
+    vcpassword: "{{ vsphere_vcpassword }}"
+    vm_name: mon_template
+    datacenter: "{{ vsphere_datacenter }}"
+    datastore: "{{ vsphere_datastore }}"
+    esxihostname: "{{ vsphere_esxihostname }}"
+    disk_file_path: "/images/MSP7.1_MON.x86_64-R2E-9.20160407.vmdk"
+  when: "'mon' in vm_types"

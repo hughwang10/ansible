@@ -1,5 +1,5 @@
 ---
-- name: Expand root disk
+- name: Expand root disk 0 of {{ deploy_vm_name }}
   vsphere_expand_disk:
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
@@ -7,7 +7,7 @@
     datacenter: "{{ vsphere_datacenter }}"
     datastore: "{{ deploy_datastore }}"
     disk_id: 0
-    disk_size: 30    
+    disk_size: "{{disk_size}}"   
     esxihostname: "{{ execution_host }}"
     folder_name: "{{ folder_name }}"
     vm_name: "{{ deploy_vm_name }}"
