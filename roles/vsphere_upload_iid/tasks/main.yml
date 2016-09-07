@@ -1,5 +1,5 @@
 ---
-- name: msg="Upload IID .iso file to vSphere"
+- name: Upload {{HOSTNAME_OF_MN_VM}} IID .iso file to vSphere
   vsphere_loadfile:
     src: "{{ output_dir }}/{{ item }}/{{ item }}.iso"
     dest: "{{vsphere_file_root_path}}/iid/{{ item }}.iso"
@@ -14,4 +14,3 @@
     - "{{HOSTNAME_OF_TS_VM}}"
     - "{{HOSTNAME_OF_DDC_VM}}"
     - "{{HOSTNAME_OF_MON_VM}}"
-
