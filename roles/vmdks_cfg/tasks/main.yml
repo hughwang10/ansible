@@ -19,6 +19,3 @@
   async: 45
   poll: 3
   when: not rst.stat.exists
-
-
-

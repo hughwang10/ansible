@@ -36,11 +36,11 @@
     vm_nic:
       nic1:
         type: vmxnet3
-        network: OAM
+        network: "{{OAM_name}}"
         network_type: standard
       nic2:
         type: vmxnet3
-        network: Internal
+        network: "{{Internal_name}}"
         network_type: standard
     vm_hardware:
       memory_mb: 5120
@@ -81,23 +81,23 @@
     vm_nic:
       nic1:
         type: vmxnet3
-        network: OAM
+        network: "{{OAM_name}}"
         network_type: standard
       nic2:
         type: vmxnet3
-        network: Access 
+        network: "{{Access_name}}" 
         network_type: standard
       nic3:
         type: vmxnet3
-        network: Internet
+        network: "{{Internet_name}}"
         network_type: standard
       nic4:
         type: vmxnet3
-        network: ControlPlaneSig
+        network: "{{ControlPlaneSig_name}}"
         network_type: standard
       nic5:
         type: vmxnet3
-        network: Internal
+        network: "{{Internal_name}}"
         network_type: standard
     vm_hardware:
       memory_mb: 6144
@@ -138,11 +138,11 @@
     vm_nic:
       nic1:
         type: vmxnet3
-        network: OAM
+        network: "{{OAM_name}}"
         network_type: standard
       nic2:
         type: vmxnet3
-        network: Internal
+        network: "{{Internal_name}}"
         network_type: standard
       nic3:
         type: vmxnet3
@@ -187,11 +187,11 @@
     vm_nic:
       nic1:
         type: vmxnet3
-        network: OAM
+        network: "{{OAM_name}}"
         network_type: standard
       nic2:
         type: vmxnet3
-        network: Internal
+        network: "{{Internal_name}}"
         network_type: standard
     vm_hardware:
       memory_mb: 5120
