@@ -1,0 +1,25 @@
+---
+- name: Add a VMware vSwitch - {{switch_name}}
+  local_action:
+    module: hw_vmware_vswitch
+    validate_certs: false
+    hostname: "{{execution_host}}"
+    username: "{{execution_host_username}}"
+    password: "{{execution_host_password}}"
+    switch_name: "{{switch_name}}"
+    nic_name1: "{{nic_name1}}"
+    nic_name2: "{{nic_name2}}"
+    state: present
+  register: result    
+
+- name: Add  VM Portgroup - {{portgroup_name}} to {{switch_name}}
+  local_action:
+    module: vmware_portgroup
+    validate_certs: false
+    hostname: "{{execution_host}}"
+    username: "{{execution_host_username}}"
+    password: "{{execution_host_password}}"
+    switch_name: "{{switch_name}}"
+    portgroup_name: "{{portgroup_name}}"
+    vlan_id: 0
+  when: "{{result.changed}} == true" 
