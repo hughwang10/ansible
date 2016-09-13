@@ -1,16 +1,4 @@
 ---
-- name: Check if the {{vm_name}} exist
-  vsphere_find_vm:
-    vcenter: "{{ vsphere_vcenter }}"
-    vcusername: "{{ vsphere_vcusername }}"
-    vcpassword: "{{ vsphere_vcpassword }}"
-    datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ vsphere_datastore }}"
-    esxihostname: "{{ execution_host }}"
-    vm_name: "{{vm_name}}"
-    folder_name: ""
-  register: deployed_template
-
 - name: poweron {{vm_name}}
   vsphere_guest:
     vcenter_hostname: "{{ vsphere_vcenter }}"
@@ -19,4 +7,3 @@
     guest: "{{vm_name}}"
     state: powered_on
     validate_certs: False
-  when: deployed_template.vm_name != ""
