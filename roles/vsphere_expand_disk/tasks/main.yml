@@ -1,6 +1,6 @@
 ---
 - name: Expand root disk 0 of {{ deploy_vm_name }}
-  vsphere_expand_disk:
+  hw_vsphere_expand_disk:
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"

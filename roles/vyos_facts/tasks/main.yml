@@ -1,0 +1,14 @@
+---
+
+- name: vyos_commands
+  local_action:
+    module: hw_vyos_command
+    commands:
+      - show interfaces ethernet {{ item }}
+    host: 10.44.147.253
+    username: vyos
+    password: vyos
+  with_items:
+    - eth0
+  register: result
+- debug: msg="{{result}}"    

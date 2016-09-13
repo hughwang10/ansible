@@ -1,7 +1,7 @@
 
 - name: Mount vmdk root file system for MN
   action:
-    module: vsphere_attach_disk
+    module: hw_vsphere_attach_disk
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"
@@ -14,7 +14,7 @@
 
 - name: Mount vmdk root file system for TS
   action:
-    module: vsphere_attach_disk
+    module: hw_vsphere_attach_disk
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"
@@ -27,7 +27,7 @@
 
 - name: Mount vmdk root file system for DDC
   action:
-    module: vsphere_attach_disk
+    module: hw_vsphere_attach_disk
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"
@@ -40,7 +40,7 @@
 
 - name: Mount vmdk root file system for MON
   action:
-    module: vsphere_attach_disk
+    module: hw_vsphere_attach_disk
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"

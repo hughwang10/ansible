@@ -1,14 +1,14 @@
 ---
 - name: Upload {{HOSTNAME_OF_MN_VM}} IID .iso file to vSphere
-  vsphere_loadfile:
+  vsphere_copy:
+    validate_certs: false
     src: "{{ output_dir }}/{{ item }}/{{ item }}.iso"
-    dest: "{{vsphere_file_root_path}}/iid/{{ item }}.iso"
-    vsphere_vcenter: "{{ vsphere_vcenter }}"
-    vsphere_vcusername: "{{ vsphere_vcusername }}"
-    vsphere_vcpassword: "{{ vsphere_vcpassword }}"
-    vsphere_datacenter: "{{ vsphere_datacenter }}"
-    vsphere_datastore: "{{ deploy_datastore }}"
-    vsphere_esxihostname: "{{ execution_host }}"
+    path: "{{vsphere_file_root_path}}/iid/{{ item }}.iso"
+    host: "{{ vsphere_vcenter }}"
+    login: "{{ vsphere_vcusername }}"
+    password: "{{ vsphere_vcpassword }}"
+    datacenter: "{{ vsphere_datacenter }}"
+    datastore: "{{ deploy_datastore }}"
   with_items: 
     - "{{HOSTNAME_OF_MN_VM}}"
     - "{{HOSTNAME_OF_TS_VM}}"

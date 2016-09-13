@@ -1,7 +1,7 @@
 ---
 - name: Set timesync attribute MN
   action:
-    module: vsphere_update_vm
+    module: hw_vsphere_update_vm
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"
@@ -15,7 +15,7 @@
 
 - name: Set timesync attribute TS
   action:
-    module: vsphere_update_vm
+    module: hw_vsphere_update_vm
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"
@@ -29,7 +29,7 @@
 
 - name: Set timesync attribute DDC
   action:
-    module: vsphere_update_vm
+    module: hw_vsphere_update_vm
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"
@@ -43,7 +43,7 @@
 
 - name: Set timesync attribute MON
   action:
-    module: vsphere_update_vm
+    module: hw_vsphere_update_vm
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"
