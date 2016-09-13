@@ -1,17 +1,4 @@
 #!/usr/bin/env python
-# Copyright (C) 2015 by
-# Ericsson AB
-# S-164 83 Stockholm
-# Sweden
-# Tel: +46 10 719 00 00
-#
-# The program may be used and/or copied only with the written permission
-# from Ericsson AB, or in accordance with the terms and
-# conditions stipulated in the agreement/contract under which the program
-# has been supplied.
-#
-# All rights reserved.
-
 DOCUMENTATION = '''
 ---
 module: vsphere_expand_disks
