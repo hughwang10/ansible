@@ -1,7 +1,4 @@
 ---
-- name: If not exist,  create directory {{vmdk_images_dir}}
-  file: path="{{vmdk_images_dir}}" state=directory mode=0755
-
 - name: check if {{vmdk_name}} exist
   stat: path="{{vmdk_images_dir}}/{{vmdk_name}}"
   register: rst    

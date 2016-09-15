@@ -1,9 +1,10 @@
 ---
-- name: poweron {{vm_name}}
+- name: poweron VM
   vsphere_guest:
     vcenter_hostname: "{{ vsphere_vcenter }}"
     username: "{{ vsphere_vcusername }}"
     password: "{{ vsphere_vcpassword }}"
-    guest: "{{vm_name}}"
+    guest: "{{item}}"
     state: powered_on
     validate_certs: False
+  with_items: "{{vm_names}}" 

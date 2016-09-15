@@ -209,4 +209,57 @@
       datacenter: "{{ vsphere_datacenter }}"
       datastore: "{{ vsphere_datastore }}"
       hostname: "{{ vsphere_esxihostname }}" 
-  when: "'mon' in vm_types"     
+  when: "'mon' in vm_types" 
+
+- name: Create a guest template vyos
+  vsphere_guest:
+    vcenter_hostname: "{{ vsphere_vcenter }}"
+    username: "{{ vsphere_vcusername }}"
+    password: "{{ vsphere_vcpassword }}"
+    guest: vyos_template
+    validate_certs: False
+    state: present
+    vm_extra_config:
+      vcpu.hotadd: no
+      mem.hotadd:  no
+      notes: "This is a VM for AFG mon_template"
+      #folder: "{{vsphere_file_root_path}}"      
+    vm_disk:
+      disk1:
+        size_gb: 20
+        type: thin
+        datastore: "{{ vsphere_datastore }}"
+    vm_nic:
+      nic1:
+        type: vmxnet3
+        network: "{{OAM_name}}"
+        network_type: standard
+      nic2:
+        type: vmxnet3
+        network: "{{Access_name}}" 
+        network_type: standard
+      nic3:
+        type: vmxnet3
+        network: "{{Internet_name}}"
+        network_type: standard
+      nic4:
+        type: vmxnet3
+        network: "{{ControlPlaneSig_name}}"
+        network_type: standard
+      nic5:
+        type: vmxnet3
+        network: "{{Internal_name}}"
+        network_type: standard
+    vm_hardware:
+      memory_mb: 512
+      num_cpus: 2
+      osid: debian6_64Guest
+      scsi: lsi
+      vm_cdrom:
+        type: "iso"
+        iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+    esxi:
+      datacenter: "{{ vsphere_datacenter }}"
+      datastore: "{{ vsphere_datastore }}"
+      hostname: "{{ vsphere_esxihostname }}" 
+  when: "'vyos' in vm_types" 

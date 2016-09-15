@@ -1,0 +1,16 @@
+---
+- name: If not exist,  create directory {{vmdk_images_dir}}
+  file: path="{{vmdk_images_dir}}" state=directory mode=0755
+
+- name: If not exist,  create directory {{host_iid_dir}}
+  file: path="{{host_iid_dir}}" state=directory mode=0755 
+
+- name: check if {{afg_supp}} exist
+  stat: path="{{host_iid_dir}}/{{afg_supp}}"
+  register: rst 
+
+- name: copy {{afg_supp}} if not exists
+  command: cp "{{vmdk_gz_images_dir}}/{{afg_supp}}" .
+  args:
+    chdir: "{{host_iid_dir}}"
+  when: not rst.stat.exists   
