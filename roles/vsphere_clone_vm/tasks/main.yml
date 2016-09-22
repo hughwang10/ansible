@@ -7,9 +7,11 @@
     guest: "{{guest_vm}}"
     validate_certs: False
     from_template: yes
+    cluster: afg_cluster
     template_src: "{{template_src}}"
     esxi:
       datacenter: "{{ vsphere_datacenter }}"
-      datastore: "{{ vsphere_datastore }}"
-      hostname: "{{ vsphere_esxihostname }}"
-    power_on_after_clone: False  
+      datastore: "{{ deploy_datastore }}"
+      hostname: "{{ execution_host }}"
+    power_on_after_clone: False
+ 

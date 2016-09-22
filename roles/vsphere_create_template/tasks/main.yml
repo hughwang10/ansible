@@ -16,23 +16,23 @@
       disk1:
         size_gb: 50
         type: thin
-        datastore: "{{ vsphere_datastore }}"
+        datastore: "{{ deploy_datastore }}"
       disk2:
         size_gb: 10
         type: thin
-        datastore: "{{ vsphere_datastore }}"
+        datastore: "{{ deploy_datastore }}"
       disk3:
         size_gb: 10
         type: thin
-        datastore: "{{ vsphere_datastore }}"
+        datastore: "{{ deploy_datastore }}"
       disk4:
         size_gb: 30
         type: thin
-        datastore: "{{ vsphere_datastore }}"
+        datastore: "{{ deploy_datastore }}"
       disk5:
         size_gb: 10
         type: thin
-        datastore: "{{ vsphere_datastore }}"
+        datastore: "{{ deploy_datastore }}"
     vm_nic:
       nic1:
         type: vmxnet3
@@ -50,14 +50,14 @@
       vm_cdrom:
         - cdrom1:
           type: "iso"
-          iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+          iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
         - cdrom2:
           type: "iso"
-          iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+          iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
     esxi:
       datacenter: "{{ vsphere_datacenter }}"
-      datastore: "{{ vsphere_datastore }}"
-      hostname: "{{ vsphere_esxihostname }}" 
+      datastore: "{{ deploy_datastore }}"
+      hostname: "{{ execution_host }}" 
   when: "'mn' in vm_types"
 
 - name: Create a guest template TS
@@ -77,7 +77,7 @@
       disk1:
         size_gb: 30
         type: thin
-        datastore: "{{ vsphere_datastore }}"
+        datastore: "{{ deploy_datastore }}"
     vm_nic:
       nic1:
         type: vmxnet3
@@ -107,14 +107,14 @@
       vm_cdrom:
         - cdrom1:
           type: "iso"
-          iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+          iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
         - cdrom2:
           type: "iso"
-          iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+          iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
     esxi:
       datacenter: "{{ vsphere_datacenter }}"
-      datastore: "{{ vsphere_datastore }}"
-      hostname: "{{ vsphere_esxihostname }}" 
+      datastore: "{{ deploy_datastore }}"
+      hostname: "{{ execution_host }}" 
   when: "'ts' in vm_types"  
 
 - name: Create a guest template DDC
@@ -134,7 +134,7 @@
       disk1:
         size_gb: 30
         type: thin
-        datastore: "{{ vsphere_datastore }}"
+        datastore: "{{ deploy_datastore }}"
     vm_nic:
       nic1:
         type: vmxnet3
@@ -156,14 +156,14 @@
       vm_cdrom:
         - cdrom1:
           type: "iso"
-          iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+          iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
         - cdrom2:
           type: "iso"
-          iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+          iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
     esxi:
       datacenter: "{{ vsphere_datacenter }}"
-      datastore: "{{ vsphere_datastore }}"
-      hostname: "{{ vsphere_esxihostname }}" 
+      datastore: "{{ deploy_datastore }}"
+      hostname: "{{ execution_host }}" 
   when: "'ddc' in vm_types"
 
 - name: Create a guest template MON
@@ -183,7 +183,7 @@
       disk1:
         size_gb: 30
         type: thin
-        datastore: "{{ vsphere_datastore }}"
+        datastore: "{{ deploy_datastore }}"
     vm_nic:
       nic1:
         type: vmxnet3
@@ -201,14 +201,14 @@
       vm_cdrom:
         - cdrom1:
           type: "iso"
-          iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+          iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
         - cdrom2:
           type: "iso"
-          iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+          iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
     esxi:
       datacenter: "{{ vsphere_datacenter }}"
-      datastore: "{{ vsphere_datastore }}"
-      hostname: "{{ vsphere_esxihostname }}" 
+      datastore: "{{ deploy_datastore }}"
+      hostname: "{{ execution_host }}" 
   when: "'mon' in vm_types" 
 
 - name: Create a guest template vyos
@@ -228,7 +228,7 @@
       disk1:
         size_gb: 20
         type: thin
-        datastore: "{{ vsphere_datastore }}"
+        datastore: "{{ deploy_datastore }}"
     vm_nic:
       nic1:
         type: vmxnet3
@@ -257,9 +257,9 @@
       scsi: lsi
       vm_cdrom:
         type: "iso"
-        iso_path: "{{ vsphere_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+        iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
     esxi:
       datacenter: "{{ vsphere_datacenter }}"
-      datastore: "{{ vsphere_datastore }}"
-      hostname: "{{ vsphere_esxihostname }}" 
+      datastore: "{{ deploy_datastore }}"
+      hostname: "{{ execution_host }}" 
   when: "'vyos' in vm_types" 

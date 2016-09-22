@@ -7,8 +7,8 @@
     vcpassword: "{{ vsphere_vcpassword }}"
     vm_name: mn_template
     datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ vsphere_datastore }}"
-    esxihostname: "{{ vsphere_esxihostname }}"
+    datastore: "{{ deploy_datastore }}"
+    esxihostname: "{{ execution_host }}"
     time_sync: True
     poweroff_mode: hard
   when: "'mn' in vm_types"
@@ -21,8 +21,8 @@
     vcpassword: "{{ vsphere_vcpassword }}"
     vm_name: ts_template
     datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ vsphere_datastore }}"
-    esxihostname: "{{ vsphere_esxihostname }}"
+    datastore: "{{ deploy_datastore }}"
+    esxihostname: "{{ execution_host }}"
     time_sync: True
     poweroff_mode: hard
   when: "'ts' in vm_types"  
@@ -35,8 +35,8 @@
     vcpassword: "{{ vsphere_vcpassword }}"
     vm_name: ddc_template
     datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ vsphere_datastore }}"
-    esxihostname: "{{ vsphere_esxihostname }}"
+    datastore: "{{ deploy_datastore }}"
+    esxihostname: "{{ execution_host }}"
     time_sync: True
     poweroff_mode: hard
   when: "'ddc' in vm_types" 
@@ -49,8 +49,8 @@
     vcpassword: "{{ vsphere_vcpassword }}"
     vm_name: mon_template
     datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ vsphere_datastore }}"
-    esxihostname: "{{ vsphere_esxihostname }}"
+    datastore: "{{ deploy_datastore }}"
+    esxihostname: "{{ execution_host }}"
     time_sync: True
     poweroff_mode: hard
   when: "'mon' in vm_types" 

@@ -6,8 +6,8 @@
     vcpassword: "{{ vsphere_vcpassword }}"
     vm_name: "{{ deploy_vm_name }}"
     datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ vsphere_datastore }}"
-    esxihostname: "{{ vsphere_esxihostname }}"
+    datastore: "{{ deploy_datastore }}"
+    esxihostname: "{{ execution_host }}"
     iso_path: "{{iso_path_input0}}"
     unit_number: 0
 
@@ -18,8 +18,8 @@
     vcpassword: "{{ vsphere_vcpassword }}"
     vm_name: "{{ deploy_vm_name }}"
     datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ vsphere_datastore }}"
-    esxihostname: "{{ vsphere_esxihostname }}"
+    datastore: "{{ deploy_datastore }}"
+    esxihostname: "{{ execution_host }}"
     iso_path: "{{iso_path_input1}}"
     unit_number: 1
 

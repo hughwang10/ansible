@@ -1,4 +1,7 @@
 ---
+- name: create {{vmdk_images_dir}} if not exist
+  file: path="{{vmdk_images_dir}}" state=directory mode=0755
+
 - name: check if {{vmdk_name}} exist
   stat: path="{{vmdk_images_dir}}/{{vmdk_name}}"
   register: rst    
@@ -13,6 +16,6 @@
   command: gunzip "{{vmdk_name}}.gz"
   args:
     chdir: "{{vmdk_images_dir}}"
-  async: 45
+  async: 100
   poll: 3
   when: not rst.stat.exists
