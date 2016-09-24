@@ -1,0 +1,19 @@
+---
+- name: "{{ image_dir }}/base_image | copy"
+  command: >
+    cp
+    {{base_image_dir}}/{{ item }}
+    {{ item }}
+  args:
+    chdir: "{{ image_dir }}"
+    creates: "{{ image_dir }}/{{ item }}"
+  with_items: "{{qcow2_images}}"
+
+- name: "{{ image_dir }}/base_image | resize"
+  command: >
+    qemu-img resize
+    {{ item }}
+    {{ vm_disk_size }}
+  args:
+    chdir: "{{ image_dir }}"
+  with_items: "{{qcow2_images}}"
