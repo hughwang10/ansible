@@ -1,0 +1,22 @@
+---
+- name: gather facts about {{vm_name}}
+  hw_vcenter:
+    vcenter_hostname: "{{vsphere_vcenter}}"
+    username: "{{vsphere_vcusername}}"
+    password: "{{vsphere_vcpassword}}"
+    action: gather_facts
+    vm_name: "{{vm_name}}"
+    ss_name: init
+    ss_memory: False
+  register: rst
+
+- name: take initial snapshot of {{vm_name}}
+  hw_vcenter:
+    vcenter_hostname: "{{vsphere_vcenter}}"
+    username: "{{vsphere_vcusername}}"
+    password: "{{vsphere_vcpassword}}"
+    action: snapshot
+    vm_name: "{{vm_name}}"
+    ss_name: init
+    ss_memory: False  
+  when: "not 'snapshots' in rst.ansible_facts"  
