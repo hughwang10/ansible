@@ -1,0 +1,9 @@
+---
+- name: "{{ image_dir }}/{{ disk_name }} | create extra disks for MN"
+  command: >
+    qemu-img create -f qcow2 
+    {{image_dir}}/{{ disk_name }}
+    {{ disk_size }}
+  args:
+    chdir: "{{ image_dir }}"
+    creates: "{{image_dir}}/{{ disk_name }}"  

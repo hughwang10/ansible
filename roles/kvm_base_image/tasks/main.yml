@@ -1,19 +1,22 @@
 ---
-- name: "{{ image_dir }}/base_image | copy"
+- name: check if the file exist
+  stat: path="{{ image_dir }}/{{ img_name }}"
+  register: st
+
+- name: "{{ image_dir }}/{{ img_name }} | copy"
   command: >
     cp
-    {{base_image_dir}}/{{ item }}
-    {{ item }}
+    {{base_image_dir}}/{{ img_name }}
+    {{ img_name }}
   args:
     chdir: "{{ image_dir }}"
-    creates: "{{ image_dir }}/{{ item }}"
-  with_items: "{{qcow2_images}}"
+  when: not {{st.stat.exists}}  
 
-- name: "{{ image_dir }}/base_image | resize"
+- name: "{{ image_dir }}/{{ img_name }} | resize"
   command: >
     qemu-img resize
-    {{ item }}
-    {{ vm_disk_size }}
+    {{ img_name }}
+    {{ new_size }}
   args:
     chdir: "{{ image_dir }}"
-  with_items: "{{qcow2_images}}"
+  when: not {{st.stat.exists}}     
