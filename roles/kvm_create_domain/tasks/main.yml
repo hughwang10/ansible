@@ -34,6 +34,13 @@
     xml: "{{ lookup('template', 'ts.xml.j2') }}"
   when: "'{{vm_type}}' == 'ts'" 
 
+- name: define domain {{vm_name}}
+  virt: 
+    name: "{{vm_name}}"
+    command: define
+    xml: "{{ lookup('template', 'vyos.xml.j2') }}"
+  when: "'{{vm_type}}' == 'vyos'"   
+
 - name: start domain {{vm_name}}
   virt:
     name: "{{vm_name}}"

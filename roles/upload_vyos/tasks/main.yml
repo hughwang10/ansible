@@ -1,0 +1,12 @@
+---
+- name: check if the file exist
+  stat: path="{{ image_dir }}/{{ img_name }}"
+  register: rst
+
+- name: copy {{img_name}}
+  command: cp {{base_image_dir}}/{{img_name}} .
+  args:
+    chdir: "{{ image_dir }}"
+  when: not {{rst.stat.exists}}
+  register: rst
+
