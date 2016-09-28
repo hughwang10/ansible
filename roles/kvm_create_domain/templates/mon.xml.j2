@@ -1,6 +1,6 @@
 <domain type='kvm'>
-  <name>{{guest}}</name>
-  <!--uuid>d6d5272d-951d-473d-94a0-0c6b046d63b3</uuid-->
+  <name>{{vm_name}}</name>
+  <!--uuid>1ae67445-2181-4cbc-8abf-1c67b1f91f9b</uuid-->
   <memory unit='KiB'>8388608</memory>
   <currentMemory unit='KiB'>8388608</currentMemory>
   <vcpu placement='static'>2</vcpu>
@@ -11,8 +11,8 @@
     <acpi/>
     <apic/>
   </features>
-  <cpu mode='custom' match='exact'>
-    <model fallback='allow'>SandyBridge</model>
+  <cpu mode='host-model'>
+    <model fallback='allow'/>
   </cpu>
   <clock offset='utc'>
     <timer name='rtc' tickpolicy='catchup'/>
@@ -30,41 +30,17 @@
     <emulator>/usr/bin/kvm-spice</emulator>
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2'/>
-      <source file='/home/kvmtest/ehuiwag/images1/MSP7.1_MN.x86_64-R2N.16.20160830.qcow2'/>
-      <target dev='sda' bus='scsi'/>
+      <source file='{{image_dir}}/{{img_name}}'/>
+      <target dev='vda' bus='virtio'/>
       <boot order='1'/>
-      <address type='drive' controller='0' bus='0' target='0' unit='0'/>
-    </disk>
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2'/>
-      <source file='/home/kvmtest/ehuiwag/images1/mn001.qcow2'/>
-      <target dev='sdb' bus='scsi'/>
-      <address type='drive' controller='0' bus='0' target='0' unit='1'/>
-    </disk>
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2'/>
-      <source file='/home/kvmtest/ehuiwag/images1/mn001-1.qcow2'/>
-      <target dev='sdc' bus='scsi'/>
-      <address type='drive' controller='0' bus='0' target='0' unit='2'/>
-    </disk>
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2'/>
-      <source file='/home/kvmtest/ehuiwag/images1/mn001-2.qcow2'/>
-      <target dev='sdd' bus='scsi'/>
-      <address type='drive' controller='0' bus='0' target='0' unit='3'/>
-    </disk>
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2'/>
-      <source file='/home/kvmtest/ehuiwag/images1/mn001-3.qcow2'/>
-      <target dev='sde' bus='scsi'/>
-      <address type='drive' controller='0' bus='0' target='0' unit='4'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
     </disk>
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
-      <source file='/home/kvmtest/ehuiwag/iid/mn01.iso'/>
-      <target dev='hda' bus='ide'/>
+      <source file='{{iid_dir}}/{{iso_name}}'/>
+      <target dev='hdb' bus='ide'/>
       <readonly/>
-      <address type='drive' controller='0' bus='0' target='0' unit='0'/>
+      <address type='drive' controller='0' bus='0' target='0' unit='1'/>
     </disk>
     <controller type='usb' index='0' model='ich9-ehci1'>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x7'/>
@@ -81,29 +57,26 @@
       <master startport='4'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x2'/>
     </controller>
-    <controller type='scsi' index='0' model='virtio-scsi'>
+    <controller type='pci' index='0' model='pci-root'/>
+    <controller type='scsi' index='0'>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
     </controller>
-    <controller type='scsi' index='1' model='virtio-scsi'>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
-    </controller>
-    <controller type='pci' index='0' model='pci-root'/>
     <controller type='ide' index='0'>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x1'/>
     </controller>
     <controller type='virtio-serial' index='0'>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
     </controller>
     <interface type='network'>
-      <!--mac address='52:54:00:ca:0e:ea'/-->
-      <source network='oam-internal'/>
-      <model type='rtl8139'/>
+      <!--mac address='52:54:00:05:f9:92'/-->
+      <source network='oam'/>
+      <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
     </interface>
     <interface type='network'>
-      <!--mac address='52:54:00:b6:01:cb'/-->
+      <!--mac address='52:54:00:58:1c:08'/-->
       <source network='internal'/>
-      <model type='rtl8139'/>
+      <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
     </interface>
     <serial type='pty'>
@@ -126,7 +99,8 @@
       <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>
     </video>
     <memballoon model='virtio'>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>
     </memballoon>
   </devices>
 </domain>
+

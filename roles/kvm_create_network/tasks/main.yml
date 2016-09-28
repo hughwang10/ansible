@@ -1,0 +1,16 @@
+---
+- name: create vm network {{network_name}}
+  virt_net:
+    command: define
+    name: "{{network_name}}"
+    xml: "{{ lookup('template', 'network.html.j2')}}"
+
+- name: start the network {{network_name}}
+  virt_net:
+    state: active
+    name: "{{network_name}}"
+
+- name: Ensure that a given {{network_name}} will be started at boot
+  virt_net:
+    autostart: yes
+    name: "{{network_name}}"    
