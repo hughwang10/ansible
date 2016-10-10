@@ -1,0 +1,24 @@
+---
+- name: test1
+  vyos_command:
+    commands:
+      - show interfaces ethernet {{ item }}
+    provider: "{{ cli }}"
+  with_items:
+    - eth0
+    - eth1
+  delegate_to: 127.0.0.1
+  register: rst  
+- debug: msg="{{rst.msg}}"   
+
+- name: test2
+  vyos_command:
+    commands:
+      - show version
+      - show hardware cpu
+    wait_for:
+      - "result[0] contains 'VyOS 1.1.7'"
+    provider: "{{ cli }}"
+  delegate_to: 127.0.0.1 
+  register: rst  
+- debug: msg="{{rst.stdout_lines}}"     

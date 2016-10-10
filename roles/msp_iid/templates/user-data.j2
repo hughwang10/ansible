@@ -1,0 +1,344 @@
+#jinja2: lstrip_blocks: True
+{% extends "user-data-template.j2" %}
+
+{% block header %}{{super()-}}
+{{self.header_msp()-}}
+{% endblock header %}
+
+{% block passwd %}{{super()-}}
+{{self.passwd_all()-}}
+{% endblock passwd %}
+
+{% block user %}{{super()-}}
+{% endblock user %}
+
+{% block bootcmd %}{{super()-}}
+{{self.bootcmd_msp()-}}
+{% endblock bootcmd %}
+
+{% block runcmd %}{{super()-}}
+{{self.runcmd_hosts()-}}
+{{self.runcmd_grub()-}}
+{{self.runcmd_kernel()-}}
+{{self.runcmd_sshd()-}}
+{{self.runcmd_snmp_msp()-}}
+{{self.runcmd_DNS()-}}
+{{self.runcmd_usr_wicked()-}}
+{{self.runcmd_keyboard()-}}
+{% if vm_type == "ts" %}
+{{self.runcmd_license()-}}
+{% endif %}
+{% endblock runcmd %}
+
+{% block timezone %}{{super()-}}
+timezone: {{VM_TIMEZONE}}
+{% endblock timezone %}
+
+{% block write_files %}{{super()-}}
+{% if vm_type == "mn" %}
+{{self.write_file_init()-}}
+{{self.write_file_init_sec()-}}
+{% endif %}
+{% if vm_type != "mn"  %}
+{{self.write_file_bootstrap()-}}
+{{self.write_file_networknames()-}}
+{% endif %}
+{{self.write_file_ifcfg_OAM()-}}
+{{self.write_file_ifcfg_Internal()-}}
+{% if vm_type == "ts" or vm_type == "ddc" or vm_type == "slb" %}
+{{self.write_file_ifcfg_Access()-}}
+{% endif %}
+{% if vm_type == "ts" or vm_type == "slb" %}
+{{self.write_file_ifcfg_Internet()-}}
+{% endif %}
+{% if vm_type == "slb" %}
+{{self.write_file_ifcfg_AccessIngress()-}}
+{{self.write_file_ifcfg_InternetIngress()-}}
+{% endif %}
+{{self.write_file_routes()-}}
+{{self.write_file_10_local()-}}
+{% endblock write_files %}
+
+{% block scripts_per_once %}{{super()-}}
+{% endblock scripts_per_once %}
+
+{% block power_state %}{{super()-}}
+{{self.reboot()-}}
+{% endblock power_state %}
+
+
+
+{# ----------------------------------- self local blocks ---------------------------------- #}
+{% block header_msp %}
+# Configuration created for MSP SLES_12
+# Author: ehuiwag
+{% endblock header_msp %}
+
+{% block passwd_all %}
+ list: |
+  root:wapwap12
+  miepadm:2YV!dA5c
+ expire: False
+{% endblock passwd_all %}
+
+{% block bootcmd_msp %}
+ - [ sh, -xc, "echo \"#################################################################\" > /etc/issue.ci" ]
+ - [ sh, -xc, "echo \"#                                                               #\" >> /etc/issue.ci" ]
+ - [ sh, -xc, "echo \"#     * * *  Cloud-init configuration is in progress  * * *     #\" >> /etc/issue.ci" ]
+ - [ sh, -xc, "echo \"#                                                               #\" >> /etc/issue.ci" ]
+ - [ sh, -xc, "echo \"#     The system will reboot shortly and then be accessible     #\" >> /etc/issue.ci" ]
+ - [ sh, -xc, "echo \"#                                                               #\" >> /etc/issue.ci" ]
+ - [ sh, -xc, "echo \"#################################################################\" >> /etc/issue.ci" ]
+ - [ sh, -xc, "if [ -f /etc/issue.orig ]; then cp /etc/issue.orig /etc/issue; fi" ]
+ - [ sh, -xc, "if [ ! -f /etc/issue.orig ]; then cp /etc/issue /etc/issue.orig; cp /etc/issue.ci /etc/issue; fi" ]
+ - [ sh, -xc, "/bin/sed -i 's/^DHCLIENT_SET_DEFAULT_ROUTE=\"yes\".*/DHCLIENT_SET_DEFAULT_ROUTE=\"no\"/' /etc/sysconfig/network/dhcp" ]
+ - [ sh, -xc, "/bin/sed -i 's/^NETCONFIG_DNS_POLICY=.*/NETCONFIG_DNS_POLICY=\"STATIC\"/' /etc/sysconfig/network/config" ]
+{% endblock bootcmd_msp %}
+
+{% block runcmd_hosts %}
+ - [ sh, -xc, "echo {{ipaddr_oam}} {{vm_name}} >> /etc/hosts" ]
+{% endblock runcmd_hosts %}
+
+{% block runcmd_grub %}
+ - [ sh, -xc, "chage -M 60 root;rm -f /etc/shadow-" ]
+ - [ sh, -xc, "chage -M 60 miepadm;rm -f /etc/shadow-" ]
+ - [ sh, -xc, "sed -i 's/^GRUB_CMDLINE_LINUX=\"\".*/GRUB_CMDLINE_LINUX=\"audit=1\"/' /etc/default/grub" ]
+ - [ sh, -xc, "sed -i 's/^GRUB_TIMEOUT.*/GRUB_TIMEOUT=0/' /etc/default/grub" ]
+ - [ sh, -xc, "echo GRUB_FORCE_HIDDEN_MENU=true >> /etc/default/grub" ]
+ - [ sh, -xc, "echo GRUB_TIMEOUT_STYLE=hidden >> /etc/default/grub" ]
+ - [ sh, -xc, "/usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg" ]
+{% endblock runcmd_grub %}
+
+{% block runcmd_kernel %}
+ - [ sh, -xc, "sed -i 's/kernel\\.unknown_nmi_panic.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/kernel\\.panic_on_unrecovered_nmi.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "echo \"  kernel.unknown_nmi_panic=1\n kernel.panic_on_unrecovered_nmi=1\n\n\" >> /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/^\\(IRQBALANCE_ARGS=\\).*$/\\1\"--hintpolicy ignore\"/' /etc/sysconfig/irqbalance" ]
+{% endblock runcmd_kernel %}
+
+{% block runcmd_sshd %}
+ - [ sh, -xc, "sed -i 's/^ListenAddress.*/ListenAddress {{ipaddr_oam}}/' /etc/ssh/sshd_config" ]
+ - [ sh, -xc, "sed -i 's/^ClientAliveCountMax.*/ClientAliveCountMax 99999/g' /etc/ssh/sshd_config" ]
+ #- [ sh, -xc, "sed -i 's/^PermitRootLogin.*/PermitRootLogin 'no'/g' /etc/ssh/sshd_config" ]
+ - [ sh, -xc, "sed -i 's/^#UseDNS.*/UseDNS 'no'/g' /etc/ssh/sshd_config" ]
+ - [ sh, -xc, "sed -i 's/ClientAliveInterval 300/ClientAliveInterval 30/' /etc/ssh/sshd_config" ] 
+ - [ sh, -xc, "sed -i 's/#TCPKeepAlive yes/TCPKeepAlive yes/' /etc/ssh/sshd_config" ]
+ - [ sh, -xc, "echo auth       optional     pam_faildelay.so delay=5000000  >> /etc/pam.d/sshd" ]
+{% endblock runcmd_sshd %}
+
+{% block runcmd_snmp_msp %}
+ - [ sh, -xc, "echo trap2sink 127.0.0.1 >> /etc/snmp/snmpd.conf" ]
+ - [ sh, -xc, "sed -i 's/^agentaddress.*/agentaddress {{ipaddr_oam}}/' /etc/snmp/snmpd.conf" ]
+ - [ sh, -xc, "sed -i 's/^    IP=.*/    IP=\"{{ipaddr_oam}}\"/' /opt/miep/snmp/tools/agentmonitor.sh" ]
+ - [ sh, -xc, "sed -i 's/^    SNMPCOMMUNITY=.*/    SNMPCOMMUNITY=\"publicMiep\"/' /opt/miep/snmp/tools/agentmonitor.sh" ]
+ - [ sh, -xc, "sed -i 's/^    IP=.*/    IP=\"{{ipaddr_oam}}\"/' /opt/miep/snmp/tools/agentmonitor_sle12.sh" ]
+ - [ sh, -xc, "sed -i 's/^    SNMPCOMMUNITY=.*/    SNMPCOMMUNITY=\"publicMiep\"/' /opt/miep/snmp/tools/agentmonitor_sle12.sh" ]
+{% endblock runcmd_snmp_msp %}
+
+{% block runcmd_DNS %}
+{% for server in IPV4_ADDRESS_OF_DNS_SERVERs %}
+ - [ sh, -xc, "/sbin/yast2 dns edit nameserver{{loop.index}}={{ server }}" ]
+{% endfor %}
+{% endblock runcmd_DNS %}
+
+{% block runcmd_usr_wicked %}
+ - [ sh, -xc, "/sbin/yast2 users add username={{msp_user}} home=/home/{{msp_user}} password={{msp_password}} grouplist=miepgrp,wheel" ]
+ - [ sh, -xc, "/usr/sbin/wicked ifdown all; /usr/sbin/wicked ifup --timeout 60 eth0; /usr/sbin/wicked ifup --timeout 60 all" ]
+{% endblock runcmd_usr_wicked %}
+
+{% block runcmd_keyboard %}
+ - [ sh, -xc, "/sbin/yast2 keyboard set layout={{VM_keyboard}}" ]
+{% endblock runcmd_keyboard %}
+
+{% block runcmd_license %}
+{% for server in license_servers %}
+ - [ sh, -xc, "echo {{server.IPV4_ADDRESS_OF_LICENSE_SERVER}} {{server.HOSTNAME_OF_LICENSE_SERVER}} >> /etc/hosts" ]
+{% endfor %}
+{% endblock runcmd_license %}
+
+{% block write_file_init %}
+ - content: |
+    MN_OAM_IPADDR={{IPV4_ADDRESS_OF_OAM_MN}}
+    MN_INTERNAL_IPADDR={{IPV4_ADDRESS_OF_INTERNAL_MN}}
+    SNMP_IPADDR={{IPV4_ADDRESS_OF_INTERNAL_MN}}
+    SNMP_PORT=8162
+    MN_SERVER_GROUPNAME={{CLUSTER_ID}}
+    STORAGE_TYPE=VMWARE
+    SUPPORT_LANG_LIST={"en":"English"}
+    AUTOSTART=Y
+    AUTODBPATCH=Y
+    PRODUCT=AFG
+   path: /opt/miep/tools/mnsetup/init.properties
+   owner: root:root
+   permissions: '0640' 
+{% endblock write_file_init %}
+
+{% block write_file_init_sec %}
+ - content: |
+    CAE_PASSWORD=wapwap12
+    MSA_PASSWORD=wapwap12
+    CAPLOG_PASSWORD=wapwap12
+    TRACELOG_PASSWORD=wapwap12
+   path: /opt/miep/tools/mnsetup/init.properties.sec
+   owner: root:root
+   permissions: '0640'
+{% endblock write_file_init_sec %}
+
+{% block write_file_bootstrap %}
+ - content: |
+    {
+     "registrar": "https://{{ipaddr_registrar}}:9443/api/",
+     "clusterid": "{{CLUSTER_ID}}",
+     "vmname": "{{vm_name}}",
+     "basicauthuser": "admin",
+     "basicauthpwd": "wapwap12"
+    }
+   path: /opt/miep/init/bootstrap.json
+   owner: root:root
+   permissions: '0640'
+{% endblock write_file_bootstrap %}
+
+{% block write_file_networknames %}
+ - content: |
+    [
+    {
+     "interfacename": "eth0",
+     "networkname": "OAM"
+    },
+    {
+     "interfacename": "eth1",
+     "networkname": "Internal"
+    }{% if vm_type == "ts" or vm_type == "ddc" or vm_type == "slb" %},
+    {
+     "interfacename": "eth2",
+     "networkname": "Access"
+    }{%endif%}{% if vm_type == "ts" or vm_type == "slb" %},
+    {
+     "interfacename": "eth3",
+     "networkname": "Internet"
+    }{%endif%}{% if vm_type == "slb" %},
+    {
+     "interfacename": "eth4",
+     "networkname": "AccessIngress"
+    },
+    {
+     "interfacename": "eth5",
+     "networkname": "InternetIngress"
+    }{% endif %} 
+    ]
+   path: /opt/miep/init/networknames.json
+   owner: root:root
+   permissions: '0644'
+   {% endblock write_file_networknames %}
+
+{% block write_file_ifcfg_OAM %}
+ - content: |
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_oam}}'
+    NETMASK='{{ipnetmask_oam}}'
+    STARTMODE='onboot'
+    USERCONTROL='no'
+    CHECK_DUPLICATE_IP='yes'
+    SEND_GRATUITOUS_ARP='yes'    
+   path: /etc/sysconfig/network/ifcfg-eth0
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_ifcfg_OAM %}
+
+{% block write_file_ifcfg_Internal %}
+ - content: |
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_internal}}'
+    NETMASK='{{ipnetmask_internal}}'
+    STARTMODE='onboot'
+    USERCONTROL='no'
+    DEFROUTE='no'    
+    DHCLIENT_SET_DEFAULT_ROUTE='no'
+    CHECK_DUPLICATE_IP='yes'
+    SEND_GRATUITOUS_ARP='yes'        
+   path: /etc/sysconfig/network/ifcfg-eth1
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_ifcfg_Internal %}
+
+{% block write_file_ifcfg_Access %}
+ - content: |
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_access}}'
+    NETMASK='{{ipnetmask_access}}'
+    STARTMODE='onboot'
+    USERCONTROL='no'
+    DEFROUTE='no'     
+    DHCLIENT_SET_DEFAULT_ROUTE='no'
+    CHECK_DUPLICATE_IP='yes'
+    SEND_GRATUITOUS_ARP='yes'        
+   path: /etc/sysconfig/network/ifcfg-eth2
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_ifcfg_Access %}
+
+{% block write_file_ifcfg_Internet %}
+ - content: |
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_internet}}'
+    NETMASK='{{ipnetmask_internet}}'
+    STARTMODE='onboot'
+    USERCONTROL='no'
+    CHECK_DUPLICATE_IP='yes'
+    SEND_GRATUITOUS_ARP='yes'     
+   path: /etc/sysconfig/network/ifcfg-eth3
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_ifcfg_Internet %}
+
+{% block write_file_ifcfg_AccessIngress %}
+ - content: |
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_AccessIngress}}'
+    NETMASK='{{ipnetmask_AccessIngress}}'
+    STARTMODE='onboot'
+    USERCONTROL='no'
+    CHECK_DUPLICATE_IP='yes'
+    SEND_GRATUITOUS_ARP='yes'    
+   path: /etc/sysconfig/network/ifcfg-eth4
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_ifcfg_AccessIngress %}
+
+{% block write_file_ifcfg_InternetIngress %}
+ - content: |
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_InternetIngress}}'
+    NETMASK='{{ipnetmask_InternetIngress}}'
+    STARTMODE='onboot'
+    USERCONTROL='no'
+    CHECK_DUPLICATE_IP='yes'
+    SEND_GRATUITOUS_ARP='yes'    
+   path: /etc/sysconfig/network/ifcfg-eth5
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_ifcfg_InternetIngress %}
+
+{% block write_file_routes %}
+ - content: |
+{% if vm_type == "slb" %}
+    default {{IPV4_DEFAULT_GATEWAY_OAM}} - -
+{% endif %}
+   path: /etc/sysconfig/network/routes
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_routes %}
+
+{% block write_file_10_local %}
+ - content:
+   path: /etc/udev/rules.d/10-local.rules
+   encoding: b64
+   owner: root:root
+   permissions: '0640'
+{% endblock write_file_10_local %}
+
+{% block reboot %}
+ mode: reboot
+ message: Server will reboot now
+ timeout: 5
+{% endblock reboot %} 

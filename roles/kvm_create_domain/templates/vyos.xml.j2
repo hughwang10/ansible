@@ -1,6 +1,6 @@
 <domain type='kvm'>
   <name>{{vm_name}}</name>
-  <uuid>062b70d3-a202-4705-bebd-8e14d0a07ffe</uuid>
+  <!--uuid>062b70d3-a202-4705-bebd-8e14d0a07ffe</uuid-->
   <memory unit='KiB'>1048576</memory>
   <currentMemory unit='KiB'>1048576</currentMemory>
   <vcpu placement='static'>1</vcpu>
@@ -61,43 +61,43 @@
       <address type='pci' domain='0x0000' bus='0x00' slot='0x0b' function='0x0'/>
     </controller>
     <interface type='direct'>
-      <mac address='52:54:00:5b:5e:13'/>
+      <!--mac address='52:54:00:5b:5e:13'/-->
       <source dev='eno1' mode='bridge'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
     </interface>
     <interface type='network'>
-      <mac address='52:54:00:ac:74:e1'/>
+      <!--mac address='52:54:00:ac:74:e1'/-->
       <source network='oam'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
     </interface>
     <interface type='network'>
-      <mac address='52:54:00:b7:ba:07'/>
+      <!--mac address='52:54:00:b7:ba:07'/-->
       <source network='internal'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
     </interface>
     <interface type='network'>
-      <mac address='52:54:00:0b:94:8d'/>
+      <!--mac address='52:54:00:0b:94:8d'/-->
       <source network='access'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>
     </interface>
     <interface type='network'>
-      <mac address='52:54:00:bf:21:51'/>
+      <!--mac address='52:54:00:bf:21:51'/-->
       <source network='access-ingress'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
     </interface>
     <interface type='network'>
-      <mac address='52:54:00:6b:e7:92'/>
+      <!--mac address='52:54:00:6b:e7:92'/-->
       <source network='internet'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>
     </interface>
     <interface type='network'>
-      <mac address='52:54:00:9b:ea:de'/>
+      <!--mac address='52:54:00:9b:ea:de'/-->
       <source network='internet-ingress'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>

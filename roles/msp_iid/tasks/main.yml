@@ -1,0 +1,21 @@
+---
+- name: create output_dir
+  file: path="{{output_dir}}/{{vm_name}}" state=directory mode=0755
+  delegate_to: 127.0.0.1
+
+- name: meta data
+  template: src=meta-data.j2 dest="{{output_dir}}/{{vm_name}}/meta-data" mode=0755
+  with_items:
+  - "{{vm_meta}}"
+  delegate_to: 127.0.0.1
+
+- name: user data
+  template: src=user-data.j2 dest="{{output_dir}}/{{vm_name}}/user-data" mode=0755  
+  delegate_to: 127.0.0.1
+
+- name: "Generate iso"
+  command: /usr/bin/genisoimage -output {{ vm_name }}.iso -volid cidata -joliet -rock user-data meta-data
+  args:
+    chdir: "{{output_dir}}/{{vm_name}}"
+  delegate_to: 127.0.0.1
+  
