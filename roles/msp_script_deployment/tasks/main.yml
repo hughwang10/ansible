@@ -1,0 +1,15 @@
+---
+- name: upload js files
+  copy:
+    src: "{{item}}"
+    dest: /opt/miep/etc/scripting/
+    owner: msausr
+    group: msagrp
+    mode: 0640
+  with_fileglob:
+    - "{{scripts_dir}}/*.js"          
+
+- name: import to database
+  shell: "sh /opt/miep/msaapp/apps/sfadmin/msa-sfadmin.sh imp -g {{CLUSTER_ID}} 'scripting/{{script_files}}'"
+  args:
+    chdir: /opt/miep/etc/

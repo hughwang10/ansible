@@ -17,14 +17,21 @@
 {% endblock bootcmd %}
 
 {% block runcmd %}{{super()-}}
-{{self.runcmd_hosts()-}}
 {{self.runcmd_grub()-}}
+{% if vm_type == "mn" %}
+{{self.runcmd_auth()-}}
+{% endif %}
 {{self.runcmd_kernel()-}}
 {{self.runcmd_sshd()-}}
 {{self.runcmd_snmp_msp()-}}
 {{self.runcmd_DNS()-}}
 {{self.runcmd_usr_wicked()-}}
 {{self.runcmd_keyboard()-}}
+{% if vm_type == "mn" %}
+{{self.runcmd_yps()-}}
+{{self.runcmd_hosts()-}}
+{{self.runcmd_initmn()-}}
+{% endif %}
 {% if vm_type == "ts" %}
 {{self.runcmd_license()-}}
 {% endif %}
@@ -35,13 +42,13 @@ timezone: {{VM_TIMEZONE}}
 {% endblock timezone %}
 
 {% block write_files %}{{super()-}}
+{% if vm_type != "mn"  %}
+{{self.write_file_bootstrap()-}}
+{% endif %}
+{{self.write_file_networknames()-}}
 {% if vm_type == "mn" %}
 {{self.write_file_init()-}}
 {{self.write_file_init_sec()-}}
-{% endif %}
-{% if vm_type != "mn"  %}
-{{self.write_file_bootstrap()-}}
-{{self.write_file_networknames()-}}
 {% endif %}
 {{self.write_file_ifcfg_OAM()-}}
 {{self.write_file_ifcfg_Internal()-}}
@@ -56,6 +63,9 @@ timezone: {{VM_TIMEZONE}}
 {{self.write_file_ifcfg_InternetIngress()-}}
 {% endif %}
 {{self.write_file_routes()-}}
+{% if vm_type == "mn" %}
+{{self.write_file_clusters()-}}
+{% endif %}
 {{self.write_file_10_local()-}}
 {% endblock write_files %}
 
@@ -97,6 +107,8 @@ timezone: {{VM_TIMEZONE}}
 
 {% block runcmd_hosts %}
  - [ sh, -xc, "echo {{ipaddr_oam}} {{vm_name}} >> /etc/hosts" ]
+ - [ sh, -xc, "echo 127.0.0.1 {{vm_name}} >> /etc/hosts" ]
+ - [ sh, -xc, "echo 127.0.0.1 {{vm_name}}.localdomain >> /etc/hosts" ] 
 {% endblock runcmd_hosts %}
 
 {% block runcmd_grub %}
@@ -108,6 +120,11 @@ timezone: {{VM_TIMEZONE}}
  - [ sh, -xc, "echo GRUB_TIMEOUT_STYLE=hidden >> /etc/default/grub" ]
  - [ sh, -xc, "/usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg" ]
 {% endblock runcmd_grub %}
+
+{% block runcmd_auth %}
+ - [ sh, -xc, "sed -i 's/^.*:.*/admin:6041A28W2rLq6/' /opt/miep/tools/lighttpd/lighttpd_auth.properties" ]
+ - [ sh, -xc, "sed -i 's/^.*=.*/admin=709e17d2a62751a051fa2072f0976334/' /opt/miep/register/conf/auth.properties" ]
+{% endblock runcmd_auth %}
 
 {% block runcmd_kernel %}
  - [ sh, -xc, "sed -i 's/kernel\\.unknown_nmi_panic.*//' /etc/sysctl.conf" ]
@@ -150,6 +167,14 @@ timezone: {{VM_TIMEZONE}}
  - [ sh, -xc, "/sbin/yast2 keyboard set layout={{VM_keyboard}}" ]
 {% endblock runcmd_keyboard %}
 
+{% block runcmd_yps %}
+ - [ sh, -xc, "sed -i 's/YPSAddress.*/YPSAddress\"\tvalue=\"https:\\/\\/yps.ericsson.net:443\\/YPServer\" \\/>/' /opt/miep/etc/license/SentinelCloudRuntime.properties" ]
+{% endblock runcmd_yps %} 
+
+{% block runcmd_initmn %}
+ - [ sh, -xc, "umask 027 ; /opt/miep/tools/mnsetup/initmn.sh firstinstall 2>&1 | tee /opt/miep/tools/mnsetup/firstinstall.log" ]
+{% endblock runcmd_initmn %}
+
 {% block runcmd_license %}
 {% for server in license_servers %}
  - [ sh, -xc, "echo {{server.IPV4_ADDRESS_OF_LICENSE_SERVER}} {{server.HOSTNAME_OF_LICENSE_SERVER}} >> /etc/hosts" ]
@@ -160,14 +185,14 @@ timezone: {{VM_TIMEZONE}}
  - content: |
     MN_OAM_IPADDR={{IPV4_ADDRESS_OF_OAM_MN}}
     MN_INTERNAL_IPADDR={{IPV4_ADDRESS_OF_INTERNAL_MN}}
-    SNMP_IPADDR={{IPV4_ADDRESS_OF_INTERNAL_MN}}
-    SNMP_PORT=8162
+    SNMP_IPADDR=127.0.0.1
+    SNMP_PORT=162
     MN_SERVER_GROUPNAME={{CLUSTER_ID}}
-    STORAGE_TYPE=VMWARE
+    STORAGE_TYPE={{STORAGE_TYPE}}
     SUPPORT_LANG_LIST={"en":"English"}
     AUTOSTART=Y
     AUTODBPATCH=Y
-    PRODUCT=AFG
+    PRODUCT=MSP
    path: /opt/miep/tools/mnsetup/init.properties
    owner: root:root
    permissions: '0640' 
@@ -321,13 +346,21 @@ timezone: {{VM_TIMEZONE}}
 
 {% block write_file_routes %}
  - content: |
-{% if vm_type == "slb" %}
+{% if vm_type != "slb" %}
     default {{IPV4_DEFAULT_GATEWAY_OAM}} - -
 {% endif %}
    path: /etc/sysconfig/network/routes
    owner: root:root
    permissions: '0644'
 {% endblock write_file_routes %}
+
+{% block write_file_clusters %}
+ - content: WwogIHsKICAgICJwYXJlbnQiIDogInNreSIsCiAgICAiZ3JvdXBzIiA6IFsKICAgICAgewogICAgICAgICJncm91cG5hbWUiIDogIlRlc3QiLAogICAgICAgICJkaXNwbGF5bmFtZSIgOiAiVGVzdCIsCiAgICAgICAgImRlc2NyaXB0aW9uIiA6ICJUZXN0IENsdXN0ZXIiCiAgICAgIH0KICAgIF0KICB9Cl0= 
+   path: /opt/miep/msaapp/apps/clusteradmin/clusters.json
+   encoding: b64
+   owner: msausr:msagrp
+   permissions: '0640'
+{% endblock write_file_clusters %}
 
 {% block write_file_10_local %}
  - content:
