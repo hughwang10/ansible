@@ -1,0 +1,17 @@
+---
+- name: check iid directory
+  file: 
+    path: "{{iid_dir}}" 
+    state: directory 
+    owner: kvmtest
+    group: kvmtest    
+    mode: 0755
+
+- name: Upload IID .iso file to KVM host
+  copy:
+    src: "{{item}}"
+    dest: "{{iid_dir}}"
+    owner: kvmtest
+    group: kvmtest
+    mode: 0755
+  with_items: "{{upload_files}}"

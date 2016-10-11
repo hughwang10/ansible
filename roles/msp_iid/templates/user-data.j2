@@ -21,14 +21,25 @@
 {% if vm_type == "mn" %}
 {{self.runcmd_auth()-}}
 {% endif %}
+{% if vm_type == "ts" %}
+{{self.runcmd_net_fs()-}}
+{{self.runcmd_kernel_ts()-}}
+{% endif %}
+{% if vm_type != "ts" %}
 {{self.runcmd_kernel()-}}
+{% endif %}
 {{self.runcmd_sshd()-}}
 {{self.runcmd_snmp_msp()-}}
 {{self.runcmd_DNS()-}}
 {{self.runcmd_usr_wicked()-}}
 {{self.runcmd_keyboard()-}}
+{% if vm_type == "mon" %}
+{{self.runcmd_blueserver_certs()-}}
+{% endif %}
 {% if vm_type == "mn" %}
 {{self.runcmd_yps()-}}
+{% endif %}
+{% if vm_type == "mn" or vm_type == "mon"%}
 {{self.runcmd_hosts()-}}
 {{self.runcmd_initmn()-}}
 {% endif %}
@@ -46,7 +57,7 @@ timezone: {{VM_TIMEZONE}}
 {{self.write_file_bootstrap()-}}
 {% endif %}
 {{self.write_file_networknames()-}}
-{% if vm_type == "mn" %}
+{% if vm_type == "mn" or vm_type == "mon"%}
 {{self.write_file_init()-}}
 {{self.write_file_init_sec()-}}
 {% endif %}
@@ -61,6 +72,9 @@ timezone: {{VM_TIMEZONE}}
 {% if vm_type == "slb" %}
 {{self.write_file_ifcfg_AccessIngress()-}}
 {{self.write_file_ifcfg_InternetIngress()-}}
+{% endif %}
+{% if vm_type == "mon" %}
+{{self.write_file_switch_config()-}}
 {% endif %}
 {{self.write_file_routes()-}}
 {% if vm_type == "mn" %}
@@ -126,6 +140,26 @@ timezone: {{VM_TIMEZONE}}
  - [ sh, -xc, "sed -i 's/^.*=.*/admin=709e17d2a62751a051fa2072f0976334/' /opt/miep/register/conf/auth.properties" ]
 {% endblock runcmd_auth %}
 
+{% block runcmd_net_fs %}
+ - [ sh, -xc, "sed -i 's/net\\.ipv4\\.tcp_wmem.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/net\\.ipv4\\.tcp_rmem.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/net\\.ipv4\\.tcp_mem.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/net\\.core\\.wmem_max.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/net\\.core\\.rmem_max.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/net\\.ipv4\\.tcp_orphan_retries.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/net\\.ipv4\\.tcp_fin_timeout.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/fs\\.nr_open.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/net\\.ipv4\\.tcp_frto.*//' /etc/sysctl.conf" ]
+{% endblock runcmd_net_fs %}
+
+{% block runcmd_kernel_ts %}
+ - [ sh, -xc, "sed -i 's/kernel\\.unknown_nmi_panic.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/kernel\\.panic_on_unrecovered_nmi.*//' /etc/sysctl.conf" ]
+ - [ sh, -xc, "echo \"  net.ipv4.tcp_wmem=4096 73728 1179648\n net.ipv4.tcp_rmem=4096 73728 1179648\n net.ipv4.tcp_mem=5435817 6039797 6710886\n net.core.wmem_max=1179648\n net.core.rmem_max=1179648\n net.ipv4.tcp_orphan_retries=1\n net.ipv4.tcp_fin_timeout=15\n fs.nr_open=2097152\n net.ipv4.tcp_frto=2\n kernel.unknown_nmi_panic=1\n kernel.panic_on_unrecovered_nmi=1\n\n\" >> /etc/sysctl.conf" ]
+ - [ sh, -xc, "sed -i 's/^\\(IRQBALANCE_ARGS=\\).*$/\\1\"--hintpolicy ignore\"/' /etc/sysconfig/irqbalance" ]
+ - [ sh, -xc, "sed -i 's/\\(MaxProcessSize\\s*=\\)\\s*[0-9]*/\\1 15099494/' /opt/miep/bin/ns/tcpproxy.ns" ]
+{% endblock runcmd_kernel_ts %}
+
 {% block runcmd_kernel %}
  - [ sh, -xc, "sed -i 's/kernel\\.unknown_nmi_panic.*//' /etc/sysctl.conf" ]
  - [ sh, -xc, "sed -i 's/kernel\\.panic_on_unrecovered_nmi.*//' /etc/sysctl.conf" ]
@@ -181,10 +215,14 @@ timezone: {{VM_TIMEZONE}}
 {% endfor %}
 {% endblock runcmd_license %}
 
+{% block runcmd_blueserver_certs %}
+ - [ sh, -xc, "cd /opt/miep/tools; /opt/miep/tools/blueserver_certs.sh /opt/miep {{ipaddr_internal}} " ]
+{% endblock runcmd_blueserver_certs %} 
+
 {% block write_file_init %}
  - content: |
-    MN_OAM_IPADDR={{IPV4_ADDRESS_OF_OAM_MN}}
-    MN_INTERNAL_IPADDR={{IPV4_ADDRESS_OF_INTERNAL_MN}}
+    MN_OAM_IPADDR={{ipaddr_oam}}
+    MN_INTERNAL_IPADDR={{ipaddr_internal}}
     SNMP_IPADDR=127.0.0.1
     SNMP_PORT=162
     MN_SERVER_GROUPNAME={{CLUSTER_ID}}
@@ -346,8 +384,9 @@ timezone: {{VM_TIMEZONE}}
 
 {% block write_file_routes %}
  - content: |
-{% if vm_type != "slb" %}
     default {{IPV4_DEFAULT_GATEWAY_OAM}} - -
+{% if vm_type == "ts" %}
+    {{IPV4_SUBNET_AND_NETMASK_OF_CLIENT}} {{IPV4_ADDRESS_OF_ACCESS_ROUTER}} - -
 {% endif %}
    path: /etc/sysconfig/network/routes
    owner: root:root
@@ -369,6 +408,24 @@ timezone: {{VM_TIMEZONE}}
    owner: root:root
    permissions: '0640'
 {% endblock write_file_10_local %}
+
+{% block write_file_switch_config %}
+ - content: |
+    [
+    {
+    "username": "admin",
+    "password": "admin",
+    "host": "10.194.221.71",
+    "port": "8417",
+    "routerid_access": "VR-Accessskypod",
+    "routerid_internet": "VR-Internetskypod",
+    "tenant_name": "admin"
+    }
+    ]
+   path: /opt/miep/slbspv/SwitchConfig.json
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_switch_config %}
 
 {% block reboot %}
  mode: reboot
