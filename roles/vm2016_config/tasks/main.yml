@@ -1,16 +1,16 @@
 ---
-- name: create output_dir
+- name: create output_dir {{ output_dir }}
   file: path="{{output_dir}}/{{vm_name}}" state=directory mode=0755
 
-- name: meta data
+- name: meta data at  {{ output_dir }}
   template: src=meta-data.j2 dest="{{output_dir}}/{{vm_name}}/meta-data" mode=0755
   with_items:
   - "{{vm_meta}}"
 
-- name: user data
+- name: user data  {{ output_dir }}/{{vm_name}}
   template: src=user-data.j2 dest="{{output_dir}}/{{vm_name}}/user-data" mode=0755  
 
-- name: "Generate iso"
+- name: Generate iso {{output_dir}}/{{vm_name}}
   command: /usr/bin/genisoimage -output {{ vm_name }}.iso -volid cidata -joliet -rock user-data meta-data
   args:
     chdir: "{{output_dir}}/{{vm_name}}"

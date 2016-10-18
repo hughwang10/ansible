@@ -11,8 +11,8 @@
 {% block runcmd %}{{super()-}}
 {{self.runcmd_sysctrl()-}}
 {{self.runcmd_hosts()-}}
-{#{self.runcmd_DNS()-}#}
-{{self.runcmd_NTP()-}}
+{# {self.runcmd_DNS()-}
+{{self.runcmd_NTP()-}} #}
 {{self.runcmd_agentmonitor()-}}
 {{self.runcmd_keyboard()-}}
 {% if vm_type == "ts" %}
@@ -73,19 +73,19 @@ timezone: {{VM_TIMEZONE}}
  - [ sh, -xc, "echo {{ipaddr_oam}} {{vm_name}} >> /etc/hosts" ]
 {% endblock runcmd_hosts %}
 
-{% block runcmd_DNS %}
+{# {% block runcmd_DNS %}
 {% for server in IPV4_ADDRESS_OF_DNS_SERVERs %}
  - [ sh, -xc, "/sbin/yast2 dns edit nameserver{{loop.index}}={{ server }}" ]
 {% endfor %}
-{% endblock runcmd_DNS %}
+{% endblock runcmd_DNS %} #}
 
-{% block runcmd_NTP %}
+{# {% block runcmd_NTP %}
 {% for server in IPV4_ADDRESS_OF_NTP_SERVERs %}
  - [ sh, -xc, "echo server {{server}} >> /etc/ntp.conf" ]
 {% endfor %}
  - [ sh, -xc, "/etc/init.d/ntp start" ]
  - [ sh, -xc, "chkconfig ntp on" ]
-{% endblock runcmd_NTP %}
+{% endblock runcmd_NTP %} #}
 
 {% block runcmd_agentmonitor %}
  - [ sh, -xc, "sed -i 's/^    SNMPCOMMUNITY=.*/    SNMPCOMMUNITY=\"publicMiep\"/' /opt/miep/snmp/tools/agentmonitor.sh" ]
@@ -283,7 +283,7 @@ timezone: {{VM_TIMEZONE}}
  - content: |
     BOOTPROTO='static'
     IPADDR='{{ipaddr_access}}'
-    NETMASK='{ipnetmask_access}}'
+    NETMASK='{{ipnetmask_access}}'
     STARTMODE='onboot'
     USERCONTROL='no'
    path: /etc/sysconfig/network/ifcfg-eth2
@@ -307,7 +307,7 @@ timezone: {{VM_TIMEZONE}}
  - content: |
     BOOTPROTO='static'
     IPADDR='{{ipaddr_cps}}'
-    NETMASK='{ipnetmask_cps}}'
+    NETMASK='{{ipnetmask_cps}}'
     STARTMODE='onboot'
     USERCONTROL='no'
    path: /etc/sysconfig/network/ifcfg-eth4
@@ -352,12 +352,12 @@ timezone: {{VM_TIMEZONE}}
 {% for item in IPV4_ADDR_OF_XDMSs %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
 {% endfor %}
-{% for item in IPV4_ADDRESS_OF_DNS_SERVERs %}
+{# {% for item in IPV4_ADDRESS_OF_DNS_SERVERs %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
-{% endfor %}
-{% for item in IPV4_ADDRESS_OF_NTP_SERVERs %}
+{% endfor %} #}
+{# {% for item in IPV4_ADDRESS_OF_NTP_SERVERs %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
-{% endfor %}
+{% endfor %} #}
 {% for item in ROUTES_OAM %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} -
 {% endfor %}
@@ -372,16 +372,16 @@ timezone: {{VM_TIMEZONE}}
 {% for item in IPV4_ADDR_OF_HSSes %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_CPS}} 255.255.255.255 -
 {% endfor %}
-{% for item in ROUTES_CPS %}
+{# {% for item in ROUTES_CPS %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_CPS}} -
-{% endfor %}
+{% endfor %} #}
     #Internet
 {% for item in ROUTES_ARWA %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_INTERNET}} 255.255.255.255 -
 {% endfor %}
-{% for item in ROUTES_INTERNET %}
+{# {% for item in ROUTES_INTERNET %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_INTERNET}} -
-{% endfor %}
+{% endfor %} #}
 {% endif %}
    path: /etc/sysconfig/network/routes
    owner: root:root

@@ -1,0 +1,4 @@
+---
+- name: Gen AFG attributes command file at {{ output_dir }}/{{vm_name}}
+  template: src=afg_attributes.j2 dest="{{output_dir}}/afg_attributes.txt" mode=0755    
+
