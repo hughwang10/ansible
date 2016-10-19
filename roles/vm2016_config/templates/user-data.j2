@@ -347,25 +347,25 @@ timezone: {{VM_TIMEZONE}}
 {% if vm_type == "mn" or vm_type == "ddc" %}
     default {{IPV4_DEFAULT_GATEWAY_OAM}} - -
 {% elif vm_type == "ts" %}
-    default {{IPV4_DEFAULT_GATEWAY_CPS}} 255.255.255.255 -
-    #OAM
-{% for item in IPV4_ADDR_OF_XDMSs %}
-    {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
-{% endfor %}
+    default {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
+   {#  #OAM #}
 {# {% for item in IPV4_ADDRESS_OF_DNS_SERVERs %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
 {% endfor %} #}
 {# {% for item in IPV4_ADDRESS_OF_NTP_SERVERs %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
 {% endfor %} #}
-{% for item in ROUTES_OAM %}
+{# {% for item in ROUTES_OAM %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} -
-{% endfor %}
+{% endfor %} #}
     #Access
 {% for item in ROUTES_ACCESS %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_ACCESS}} -
 {% endfor %}
     #CPS
+{% for item in IPV4_ADDR_OF_XDMSs %}
+    {{item}} {{IPV4_DEFAULT_GATEWAY_CPS}} 255.255.255.255 -
+{% endfor %}
 {% for item in IPV4_ADDR_OF_DNSENUMs %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_CPS}} 255.255.255.255 -
 {% endfor %}

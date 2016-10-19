@@ -1,0 +1,35 @@
+#!/usr/bin/bash
+
+echo #start#
+su -s /bin/bash - msausr -c "bash"
+PGPASSWORD=wapwap12 psql -U msa
+\set ON_ERROR_STOP 1
+delete from DIAMETERPEER;
+delete from DIAMETERPEERLIST;
+{% for item in afg_psql_database.Diameter.Peers %}
+insert into DIAMETERPEER (diameterpeerseq,peerdisplayname,hostname,address,port,timeout) values \
+                         ({{100 + loop.index}},'{{item.DisplayName}}','{{item.HostName}}','{{item.IPAddress}}',{{item.Port}},{{item.Timeout}});
+{% endfor%}
+insert into DIAMETERPEERLIST (diameterpeerlistseq,listname) values (100,'list-100');
+{% for item in afg_psql_database.Diameter.Peers %}
+insert into DIAMETERPEERLISTMEMBERS (diameterpeerlistid,peer,prio) values (100,{{100 + loop.index}},1);
+{% endfor%}
+insert into DIAMETERROUTE (diameterrouteseq,application,realm,peerlist) values \
+                          (101,10002,'{{afg_psql_database.Diameter.Route.Realm}}',100);
+delete from AUIDXDMSPOOLMAP;
+delete from XDMSPOOLMAP;
+delete from XDMSPOOLS;
+delete from XDMSERVERS;
+{% for item in afg_psql_database.AP.servers %}
+INSERT INTO XDMSERVERS (XDMSERVERID, XDMSERVERADDRESS, XDMSERVERPORT, XDMSERVICE) VALUES \
+                       ({{100 + loop.index - 1}},'{{item.address}}',{{item.port}},'{{item.service}}');
+{% endfor%}
+INSERT INTO XDMSPOOLS (XDMSPOOLID, XDMSPOOLNAME) VALUES (100,'{{afg_psql_database.AP.pools.name}}');
+{% for item in afg_psql_database.AP.servers %}
+INSERT INTO XDMSPOOLMAP (XDMSPOOLID, XDMSERVERID, PRIORITY) VALUES (100,{{100 + loop.index - 1}},1);
+{% endfor%}
+INSERT INTO AUIDXDMSPOOLMAP (AUIDNAME, XDMSPOOLID) VALUES ('{{afg_psql_database.AP.auids.auid}}',100);
+commit;
+\q
+exit
+echo # Done! #

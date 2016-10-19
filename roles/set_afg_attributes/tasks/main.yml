@@ -1,7 +1,7 @@
 ---
 - name: combine all attributes group
   set_fact:
-    afg_attr: "{{ afg_attr|default({}) | combine(item.value) }}"
+    afg_attr: "{{ afg_attr|default({})|combine(item.value) }}"
   with_dict: "{{afg_attributes}}"
 
 - name: set afg attribute
