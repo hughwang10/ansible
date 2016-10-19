@@ -39,7 +39,9 @@ def main():
     if (output !=  afg_attribute_value) and (afg_attribute_confirm == True):
         afg_set(afg_attribute,afg_attribute_value,command,module)
         module.exit_json(changed=True, changes=changes)
-    else:            
+    elif output !=  afg_attribute_value:
+        module.fail_json(msg="Audit failed: %s " % str(changes))
+    else:
         module.exit_json(changed=False, changes=changes)    
 
 from ansible.module_utils.basic import *
