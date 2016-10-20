@@ -8,14 +8,14 @@ delete from DIAMETERPEER;
 delete from DIAMETERPEERLIST;
 {% for item in afg_psql_database.Diameter.Peers %}
 insert into DIAMETERPEER (diameterpeerseq,peerdisplayname,hostname,address,port,timeout) values \
-                         ({{100 + loop.index}},'{{item.DisplayName}}','{{item.HostName}}','{{item.IPAddress}}',{{item.Port}},{{item.Timeout}});
+                         ({{100 + loop.index -1}},'{{item.DisplayName}}','{{item.HostName}}','{{item.IPAddress}}',{{item.Port}},{{item.Timeout}});
 {% endfor%}
 insert into DIAMETERPEERLIST (diameterpeerlistseq,listname) values (100,'list-100');
 {% for item in afg_psql_database.Diameter.Peers %}
-insert into DIAMETERPEERLISTMEMBERS (diameterpeerlistid,peer,prio) values (100,{{100 + loop.index}},1);
+insert into DIAMETERPEERLISTMEMBERS (diameterpeerlistid,peer,prio) values (100,{{100 + loop.index - 1}},1);
 {% endfor%}
 insert into DIAMETERROUTE (diameterrouteseq,application,realm,peerlist) values \
-                          (101,10002,'{{afg_psql_database.Diameter.Route.Realm}}',100);
+                          (100,{{afg_psql_database.Diameter.Route.application}},'{{afg_psql_database.Diameter.Route.Realm}}',100);
 delete from AUIDXDMSPOOLMAP;
 delete from XDMSPOOLMAP;
 delete from XDMSPOOLS;

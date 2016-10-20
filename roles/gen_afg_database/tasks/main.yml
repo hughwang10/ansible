@@ -1,4 +1,4 @@
 ---
-- name: Gen AFG attributes command file at {{ output_dir }}/{{vm_name}}
+- name: Gen AFG attributes command file at {{ output_dir }}
   template: src=afg_database.j2 dest="{{output_dir}}/afg_database.sh" mode=0755    
 

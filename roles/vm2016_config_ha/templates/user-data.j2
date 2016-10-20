@@ -40,12 +40,28 @@ timezone: {{VM_TIMEZONE}}
 {% endif %}
 {{self.write_file_ifcfg_OAM()-}}
 {{self.write_file_ifcfg_Internal()-}}
-{% if vm_type == "ts" or vm_type == "ddc" %}{{self.write_file_ifcfg_Access()-}}{% endif %}
-{% if vm_type == "ts" %}{{self.write_file_ifcfg_Internet()-}}{% endif %}
-{% if vm_type == "ts" %}{{self.write_file_ifcfg_CPS()-}}{% endif %}
-{% if vm_type == "mon" %}{{self.write_file_switch_config()-}}{% endif %}
+{% if vm_type == "ts" or vm_type == "ddc" or vm_type == "slb" %}
+{{self.write_file_ifcfg_Access()-}}
+{% endif %}
+{% if vm_type == "ts" or vm_type == "slb" %}
+{{self.write_file_ifcfg_Internet()-}}
+{% endif %}
+{% if vm_type == "ts" %}
+{{self.write_file_ifcfg_CPS()-}}
+{% endif %}
+{% if vm_type == "slb" %}
+{{self.write_file_ifcfg_Access_Ingress()-}}
+{% endif %}
+{% if vm_type == "slb" %}
+{{self.write_file_ifcfg_Internet_Ingress()-}}
+{% endif %}
+{% if vm_type == "mon" %}
+{{self.write_file_switch_config()-}}
+{% endif %}
 {{self.write_file_routes()-}}
-{% if vm_type == "mn" %}{{self.write_file_clusters()-}}{% endif %}
+{% if vm_type == "mn" %}
+{{self.write_file_clusters()-}}
+{% endif %}
 {{self.write_file_10_local()-}}
 {% endblock write_files %}
 
@@ -133,10 +149,12 @@ timezone: {{VM_TIMEZONE}}
  - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=mn NB_INTERFACE=2 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} | tee /var/log/hardening.log" ]
 {% elif vm_type == "ts" %}
  - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=ts NB_INTERFACE=5 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} | tee /var/log/hardening.log" ]
-{% elif vm_type == "ddc" %}
- - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=ddc NB_INTERFACE=3 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} INTERNAL_IP_ADDRESS={{ipaddr_internal}}" ]
+{% elif vm_type == "slb" %}
+ - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=slb NB_INTERFACE=6 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} | tee /var/log/hardening.log" ]
 {% elif vm_type == "mon" %}
- - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=mon NB_INTERFACE=2 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} INTERNAL_IP_ADDRESS={{ipaddr_internal}}" ]
+ - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=mon NB_INTERFACE=2 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} | tee /var/log/hardening.log" ]
+{% elif vm_type == "ddc" %}
+ - [ sh, -xc, "/mnt/customizations2/scripts/hardening.sh NODE_TYPE=ddc NB_INTERFACE=3 OAM_IP_ADDRESS={{ipaddr_oam}} OAM_SUBNET={{IPT_OAM_SUBNETs|join(',')}} INTERNAL_IP_ADDRESS={{ipaddr_internal}} | tee /var/log/hardening.log" ]
 {% endif %}
  - [ sh, -xc, "umount /mnt/customizations2" ]
 {% endblock runcmd_install_sw %}
@@ -236,18 +254,26 @@ timezone: {{VM_TIMEZONE}}
     {
      "interfacename": "eth1",
      "networkname": "Internal"
-    }{% if vm_type == "ts" or vm_type == "ddc" %},
+    }{% if vm_type == "ts" or vm_type == "ddc" or vm_type == "slb"%},
     {
      "interfacename": "eth2",
      "networkname": "Access"
-    }{%endif%}{% if vm_type == "ts" %},
+    }{%endif%}{% if vm_type == "ts" or vm_type == "slb" %},
     {
      "interfacename": "eth3",
      "networkname": "Internet"
-    },
+    }{%endif%}{% if vm_type == "ts" %},
     {
      "interfacename": "eth4",
      "networkname": "ControlPlaneSig"
+    }{% endif %}{% if vm_type == "slb" %},
+    {
+     "interfacename": "eth4",
+     "networkname": "AccessIngress"
+    },
+    {
+    "interfacename": "eth5",
+    "networkname": "InternetIngress"
     }{% endif %} 
     ]
    path: /opt/miep/init/networknames.json
@@ -315,6 +341,30 @@ timezone: {{VM_TIMEZONE}}
    permissions: '0644'
 {% endblock write_file_ifcfg_CPS %}
 
+{% block write_file_ifcfg_Access_Ingress %}
+ - content: |
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_access_ingress}}'
+    NETMASK='{{IPV4_NETMASK_OF_ACCESS_INGRESS}}'
+    STARTMODE='onboot'
+    USERCONTROL='no'
+   path: /etc/sysconfig/network/ifcfg-eth4
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_ifcfg_Access_Ingress %}
+
+{% block write_file_ifcfg_Internet_Ingress %}
+ - content: |
+    BOOTPROTO='static'
+    IPADDR='{{ipaddr_internet_ingress}}'
+    NETMASK='{{IPV4_NETMASK_OF_INTERNET_INGRESS}}'
+    STARTMODE='onboot'
+    USERCONTROL='no'
+   path: /etc/sysconfig/network/ifcfg-eth5
+   owner: root:root
+   permissions: '0644'
+{% endblock write_file_ifcfg_Internet_Ingress %}
+
 {% block write_file_switch_config %}
  - content: |
     [
@@ -344,7 +394,7 @@ timezone: {{VM_TIMEZONE}}
 
 {% block write_file_routes %}
  - content: |
-{% if vm_type == "mn" or vm_type == "ddc" %}
+{% if vm_type != "ts" %}
     default {{IPV4_DEFAULT_GATEWAY_OAM}} - -
 {% elif vm_type == "ts" %}
     default {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
