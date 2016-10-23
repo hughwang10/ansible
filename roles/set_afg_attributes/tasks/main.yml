@@ -8,6 +8,6 @@
   afg_attribute: 
     attribute_cluster: "{{CLUSTER_ID}}"
     attribute: "{{item.key}}"
-    attribute_value: "{{item.value}}" #GET,PUT,POST,DELETE
-    #attribute_confirm: False 
+    attribute_value: "{{item.value}}" 
+    attribute_confirm: "{{afg_attribute_confirm}}" 
   with_dict: "{{afg_attr}}"  

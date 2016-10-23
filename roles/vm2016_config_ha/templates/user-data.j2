@@ -162,12 +162,9 @@ timezone: {{VM_TIMEZONE}}
 {% block runcmd_snmp %}
 {% if vm_type == "mn" %}
  - [ sh, -xc, "sed -i '/trap2sink.*public 8162/d' /etc/snmp/snmpd.conf" ]
- - [ sh, -xc, "echo trap2sink {{ipaddr_internal}} ESA-PC 8162 >> /etc/snmp/snmpd.conf" ]
- - [ sh, -xc, "/etc/init.d/snmpd restart" ]
-{% else %}
- - [ sh, -xc, "echo trap2sink {{ipaddr_internal}} ESA-PC 8162 >> /etc/snmp/snmpd.conf" ]
- - [ sh, -xc, "/etc/init.d/snmpd restart" ]
 {% endif %}
+ - [ sh, -xc, "echo trap2sink {{ipaddr_internal}}:8162 ESA-PC >> /etc/snmp/snmpd.conf" ]
+ - [ sh, -xc, "/etc/init.d/snmpd restart" ]
 {% endblock runcmd_snmp %}
 
 {% block runcmd_esa %}
@@ -248,28 +245,28 @@ timezone: {{VM_TIMEZONE}}
  - content: |
     [
     {
-     "interfacename": "eth0",
-     "networkname": "OAM"
+    "interfacename": "eth0",
+    "networkname": "OAM"
     },
     {
-     "interfacename": "eth1",
-     "networkname": "Internal"
+    "interfacename": "eth1",
+    "networkname": "Internal"
     }{% if vm_type == "ts" or vm_type == "ddc" or vm_type == "slb"%},
     {
-     "interfacename": "eth2",
-     "networkname": "Access"
+    "interfacename": "eth2",
+    "networkname": "Access"
     }{%endif%}{% if vm_type == "ts" or vm_type == "slb" %},
     {
-     "interfacename": "eth3",
-     "networkname": "Internet"
+    "interfacename": "eth3",
+    "networkname": "Internet"
     }{%endif%}{% if vm_type == "ts" %},
     {
-     "interfacename": "eth4",
-     "networkname": "ControlPlaneSig"
+    "interfacename": "eth4",
+    "networkname": "ControlPlaneSig"
     }{% endif %}{% if vm_type == "slb" %},
     {
-     "interfacename": "eth4",
-     "networkname": "AccessIngress"
+    "interfacename": "eth4",
+    "networkname": "AccessIngress"
     },
     {
     "interfacename": "eth5",
@@ -394,20 +391,8 @@ timezone: {{VM_TIMEZONE}}
 
 {% block write_file_routes %}
  - content: |
-{% if vm_type != "ts" %}
     default {{IPV4_DEFAULT_GATEWAY_OAM}} - -
-{% elif vm_type == "ts" %}
-    default {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
-   {#  #OAM #}
-{# {% for item in IPV4_ADDRESS_OF_DNS_SERVERs %}
-    {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
-{% endfor %} #}
-{# {% for item in IPV4_ADDRESS_OF_NTP_SERVERs %}
-    {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} 255.255.255.255 -
-{% endfor %} #}
-{# {% for item in ROUTES_OAM %}
-    {{item}} {{IPV4_DEFAULT_GATEWAY_OAM}} -
-{% endfor %} #}
+{% if vm_type == "ts" %}
     #Access
 {% for item in ROUTES_ACCESS %}
     {{item}} {{IPV4_DEFAULT_GATEWAY_ACCESS}} -

@@ -1,21 +1,28 @@
 ---
-- name: create {{vmdk_images_dir}} if not exist
-  file: path="{{vmdk_images_dir}}" state=directory mode=0755
+# - name: create {{vmdk_images_dir}} if not exist
+#   file: path="{{vmdk_images_dir}}" state=directory mode=0755
 
-- name: check if {{vmdk_name}} exist
-  stat: path="{{vmdk_images_dir}}/{{vmdk_name}}"
-  register: rst    
+- name: file list in {{vmdk_gz_images_dir}}
+  find: "path={{vmdk_gz_images_dir}} patterns='*.vmdk.gz'" 
+  register: rst 
 
-- name: copy {{vmdk_name}}.gz if not exists
-  command: cp "{{vmdk_gz_images_dir}}/{{vmdk_name}}.gz" .
+- name: check files
+  set_fact: 
+    vmdk_names: "{{vmdk_names | default([]) + [item.path | regex_replace('^(.*).gz$', '\\1') | regex_replace('^.*/(.*)$', '\\1')] }}"
+  with_items: "{{rst.files}}" 
+
+- name: copy vmdk_name.gz if not exists
+  command: cp "{{vmdk_gz_images_dir}}/{{item}}.gz" .
   args:
     chdir: "{{vmdk_images_dir}}"
-  when: not rst.stat.exists
+    creates: "{{vmdk_images_dir}}/{{item}}" # if exist, don't
+  with_items: "{{vmdk_names}}"  
 
-- name: gunzip {{vmdk_name}}.gz files
-  command: gunzip "{{vmdk_name}}.gz"
+- name: gunzip vmdk_name.gz files
+  command: gunzip "{{item}}.gz"
   args:
     chdir: "{{vmdk_images_dir}}"
+    creates: "{{vmdk_images_dir}}/{{item}}" # if exist, don't
+  with_items: "{{vmdk_names}}"      
   async: 100
   poll: 3
-  when: not rst.stat.exists
