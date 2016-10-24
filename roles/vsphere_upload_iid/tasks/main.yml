@@ -1,4 +1,13 @@
 ---
+- name: grab file list
+  find: path="{{output_dir}}" patterns="*/" file_type="directory" 
+  register: rst         
+
+- name: set fact
+  set_fact: 
+    vm_names: "{{vm_names | default([]) + [item.path | regex_replace('^.*/(.*)$', '\\1')] }}"
+  with_items: "{{rst.files}}"
+
 - name: Upload {{HOSTNAME_OF_MN_VM}} IID .iso file to vSphere
   vsphere_copy:
     validate_certs: false
@@ -9,8 +18,4 @@
     password: "{{ vsphere_vcpassword }}"
     datacenter: "{{ vsphere_datacenter }}"
     datastore: "{{ deploy_datastore }}"
-  with_items: 
-    - "{{HOSTNAME_OF_MN_VM}}"
-    - "{{HOSTNAME_OF_TS_VM}}"
-    - "{{HOSTNAME_OF_DDC_VM}}"
-    - "{{HOSTNAME_OF_MON_VM}}"
+  with_items: "{{vm_names}}" 
