@@ -10,4 +10,5 @@
     attribute: "{{item.key}}"
     attribute_value: "{{item.value}}" 
     attribute_confirm: "{{afg_attribute_confirm}}" 
-  with_dict: "{{afg_attr}}"  
+  with_dict: "{{afg_attr}}"
+  delegate_to: "{{IPV4_ADDRESS_OF_OAM_MN}}" 

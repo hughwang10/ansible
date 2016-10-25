@@ -93,7 +93,7 @@
         network_type: standard
       nic4:
         type: vmxnet3
-        network: "{{ControlPlaneSig_name}}"
+        network: "{{CPS_name}}"
         network_type: standard
       nic5:
         type: vmxnet3
@@ -146,7 +146,7 @@
         network_type: standard
       nic3:
         type: vmxnet3
-        network: Access
+        network: "{{Access_name}}"
         network_type: standard
     vm_hardware:
       memory_mb: 4096
@@ -232,23 +232,11 @@
     vm_nic:
       nic1:
         type: vmxnet3
-        network: "{{OAM_name}}"
-        network_type: standard
+        network: OAM
+        network_type: standard      
       nic2:
         type: vmxnet3
-        network: "{{Access_name}}" 
-        network_type: standard
-      nic3:
-        type: vmxnet3
-        network: "{{Internet_name}}"
-        network_type: standard
-      nic4:
-        type: vmxnet3
-        network: "{{ControlPlaneSig_name}}"
-        network_type: standard
-      nic5:
-        type: vmxnet3
-        network: "{{Internal_name}}"
+        network: "{{OAM_name}}"
         network_type: standard
     vm_hardware:
       memory_mb: 512
@@ -257,7 +245,7 @@
       scsi: lsi
       vm_cdrom:
         type: "iso"
-        iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+        iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/images/vyos-1.1.7-amd64.iso"
     esxi:
       datacenter: "{{ vsphere_datacenter }}"
       datastore: "{{ deploy_datastore }}"

@@ -1,12 +1,13 @@
 ---
 - name: grab file list
-  find: path="{{output_dir}}" patterns="*/" file_type="directory" 
-  register: rst         
+  find: path="{{output_dir}}" patterns="*" file_type="directory" 
+  register: rst   
 
 - name: set fact
   set_fact: 
     vm_names: "{{vm_names | default([]) + [item.path | regex_replace('^.*/(.*)$', '\\1')] }}"
   with_items: "{{rst.files}}"
+- debug: msg="{{vm_names}}"
 
 - name: Upload {{HOSTNAME_OF_MN_VM}} IID .iso file to vSphere
   vsphere_copy:

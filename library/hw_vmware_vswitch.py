@@ -135,16 +135,14 @@ class VMwareHostVirtualSwitch(object):
         vss_spec.numPorts = self.number_of_ports
         vss_spec.mtu = self.mtu
         nicDevice_tmp = []
-        if self.nic_name1 != 'None':
-            #print self.nic_name1
+        if self.nic_name1 != None:
             nicDevice_tmp.append(self.nic_name1)
-        if self.nic_name2 != 'None':
-            #print self.nic_name2
+        if self.nic_name2 != None:
             nicDevice_tmp.append(self.nic_name2)
-        #print nicDevice_tmp    
+        #nicDevice_tmp = [] 
         if nicDevice_tmp:
-            vss_spec.bridge = vim.host.VirtualSwitch.BondBridge(nicDevice=nicDevice_tmp)  
-        #vss_spec.bridge = vim.host.VirtualSwitch.BondBridge(nicDevice=nicDevice_tmp)        
+          vss_spec.bridge = vim.host.VirtualSwitch.BondBridge(nicDevice=nicDevice_tmp)  
+        #vss_spec.bridge = vim.host.VirtualSwitch.BondBridge(nicDevice=[self.nic_name])
         self.host_system.configManager.networkSystem.AddVirtualSwitch(vswitchName=self.switch_name, spec=vss_spec)
         self.module.exit_json(changed=True)
 
@@ -190,8 +188,8 @@ class VMwareHostVirtualSwitch(object):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(dict(switch_name=dict(required=True, type='str'),
-                         nic_name1=dict(required=False, type='str'),
-                         nic_name2=dict(required=False, type='str'),                         
+                         nic_name1=dict(required=False, default=None, type='str'),
+                         nic_name2=dict(required=False, default= None, type='str'),                         
                          number_of_ports=dict(required=False, type='int', default=128),
                          mtu=dict(required=False, type='int', default=1500),
                          state=dict(default='present', choices=['present', 'absent'], type='str')))
