@@ -16,5 +16,8 @@
 - name: import data
   shell: su -s /bin/bash - msausr -c "PGPASSWORD=wapwap12 psql -U msa < /var/tmp/afg.sql"
   delegate_to: "{{IPV4_ADDRESS_OF_OAM_MN}}"
-  when: "{{rst.changed}}"      
+  when: "{{rst.changed}}" 
+  register: rst
+- debug: msg="{{rst.stdout_lines}}"
+  when: "{{rst.changed}}"       
 

@@ -1,0 +1,47 @@
+---
+- name: mount vmtools of {{vm_name}}
+  hw_vc_vmtools:
+    vcenter_hostname: "{{vsphere_vcenter}}"
+    username: "{{vsphere_vcusername}}"
+    password: "{{vsphere_vcpassword}}"
+    action: upgrade_tools
+    vm_name: "{{vm_name}}"
+  register: mounted
+
+- name: run installation
+  shell: >
+    mkdir -p /mnt/vmw-tools &&
+    mount /dev/sr0 /mnt/vmw-tools &&
+    VMW_TOOLS=$(ls /mnt/vmw-tools/ | grep .gz) &&
+    cp -f /mnt/vmw-tools/${VMW_TOOLS} /tmp/ &&
+    umount /mnt/vmw-tools &&
+    rmdir /mnt/vmw-tools &&
+    tar -zxvf /tmp/${VMW_TOOLS} -C /tmp/ &&
+    cd /tmp/vmware-tools-distrib/ &&
+    ./vmware-install.pl -d default &&
+    rm -rf vmware-tools-distrib/ &&
+    rm -f /tmp/${VMW_TOOLS} &&
+    cd ~
+  args:
+    chdir: /var/tmp  
+  delegate_to: "{{oam_ipaddr}}"  
+  when: "{{mounted.changed}}" 
+  register: run_file  
+ 
+- name: clear iso files
+  hw_vsphere_cd_iso:
+    vcenter: "{{ vsphere_vcenter }}"
+    vcusername: "{{ vsphere_vcusername }}"
+    vcpassword: "{{ vsphere_vcpassword }}"
+    vm_name: "{{ vm_name }}"
+    datacenter: "{{ vsphere_datacenter }}"
+    datastore: "{{ deploy_datastore }}"
+    esxihostname: "{{ execution_host }}"
+    iso_path: "{{item.iso_path}}"
+    unit_number: "{{item.unit_number}}"
+  with_items:
+    - unit_number: 0
+      iso_path: ""
+    - unit_number: 1
+      iso_path: "" 
+  when: "{{run_file.changed}}"
