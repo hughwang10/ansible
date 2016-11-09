@@ -93,7 +93,7 @@
         network_type: standard
       nic4:
         type: vmxnet3
-        network: "{{CPS_name}}"
+        network: "{{ControlPlaneSig_name}}"
         network_type: standard
       nic5:
         type: vmxnet3
@@ -116,6 +116,67 @@
       datastore: "{{ deploy_datastore }}"
       hostname: "{{ execution_host }}" 
   when: "'ts' in vm_types"  
+
+- name: Create a guest template SLB
+  hw_vsphere_guest:
+    vcenter_hostname: "{{ vsphere_vcenter }}"
+    username: "{{ vsphere_vcusername }}"
+    password: "{{ vsphere_vcpassword }}"
+    guest: slb_template
+    validate_certs: False
+    state: present
+    vm_extra_config:
+      vcpu.hotadd: no
+      mem.hotadd:  no
+      notes: "This is a VM for AFG slb_template"
+      #folder: "{{vsphere_file_root_path}}"      
+    vm_disk:
+      disk1:
+        size_gb: 30
+        type: thin
+        datastore: "{{ deploy_datastore }}"
+    vm_nic:
+      nic1:
+        type: vmxnet3
+        network: "{{OAM_name}}"
+        network_type: standard
+      nic2:
+        type: vmxnet3
+        network: "{{Access_name}}" 
+        network_type: standard
+      nic3:
+        type: vmxnet3
+        network: "{{Internet_name}}"
+        network_type: standard
+      nic4:
+        type: vmxnet3
+        network: "{{AccessIngress_name}}"
+        network_type: standard
+      nic5:
+        type: vmxnet3
+        network: "{{InternetIngress_name}}"
+        network_type: standard
+      nic6:
+        type: vmxnet3
+        network: "{{Internal_name}}"
+        network_type: standard
+    vm_hardware:
+      memory_mb: 6144
+      num_cpus: 4
+      osid: sles11_64Guest
+      scsi: lsi
+      vm_cdrom:
+        - cdrom1:
+          type: "iso"
+          iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+        - cdrom2:
+          type: "iso"
+          iso_path: "{{ deploy_datastore}}/{{vsphere_file_root_path }}/{{ CLUSTER_ID }}/empty.iso"
+    esxi:
+      datacenter: "{{ vsphere_datacenter }}"
+      datastore: "{{ deploy_datastore }}"
+      hostname: "{{ execution_host }}" 
+  when: "'slb' in vm_types"  
 
 - name: Create a guest template DDC
   hw_vsphere_guest:

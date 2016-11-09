@@ -246,31 +246,31 @@ timezone: {{VM_TIMEZONE}}
     [
     {
     "interfacename": "eth0",
-    "networkname": "OAM"
+    "networkname": "{{OAM_name}}"
     },
     {
     "interfacename": "eth1",
-    "networkname": "Internal"
+    "networkname": "{{Internal_name}}"
     }{% if vm_type == "ts" or vm_type == "ddc" or vm_type == "slb"%},
     {
     "interfacename": "eth2",
-    "networkname": "Access"
+    "networkname": "{{Access_name}}"
     }{%endif%}{% if vm_type == "ts" or vm_type == "slb" %},
     {
     "interfacename": "eth3",
-    "networkname": "Internet"
+    "networkname": "{{Internet_name}}"
     }{%endif%}{% if vm_type == "ts" %},
     {
     "interfacename": "eth4",
-    "networkname": "ControlPlaneSig"
+    "networkname": "{{ControlPlaneSig_name}}"
     }{% endif %}{% if vm_type == "slb" %},
     {
     "interfacename": "eth4",
-    "networkname": "AccessIngress"
+    "networkname": "{{AccessIngress_name}}"
     },
     {
     "interfacename": "eth5",
-    "networkname": "InternetIngress"
+    "networkname": "{{InternetIngress_name}}"
     }{% endif %} 
     ]
    path: /opt/miep/init/networknames.json

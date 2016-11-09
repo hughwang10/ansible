@@ -1,52 +1,22 @@
 
-- name: Mount vmdk root file system for MN
-  action:
-    module: hw_vsphere_attach_disk
-    vcenter: "{{ vsphere_vcenter }}"
-    vcusername: "{{ vsphere_vcusername }}"
-    vcpassword: "{{ vsphere_vcpassword }}"
-    vm_name: mn_template
-    datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ deploy_datastore }}"
-    esxihostname: "{{ execution_host }}"
-    disk_file_path: "/images/MSP7.1_MN.x86_64-R2E-11.20160407.vmdk"
-  when: "'mn' in vm_types" 
+- name: make a vmdk name
+  find: "path={{vmdk_images_dir}} patterns='{{vmdk_patterns}}'" 
+  delegate_to: "{{execution_host}}"
+  register: rst      
 
-- name: Mount vmdk root file system for TS
-  action:
-    module: hw_vsphere_attach_disk
-    vcenter: "{{ vsphere_vcenter }}"
-    vcusername: "{{ vsphere_vcusername }}"
-    vcpassword: "{{ vsphere_vcpassword }}"
-    vm_name: ts_template
-    datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ deploy_datastore }}"
-    esxihostname: "{{ execution_host }}"
-    disk_file_path: "/images/AFG16_TS.x86_64-R1A24.20160421_104557.vmdk"
-  when: "'ts' in vm_types"  
+- name: check files
+  set_fact: 
+    vmdk_name: "{{rst.files[0].path | regex_replace('^.*/(.*)$', '\\1')}}"  
 
-- name: Mount vmdk root file system for DDC
+- name: Mount vmdk root file system for {{vm_name}}
   action:
     module: hw_vsphere_attach_disk
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"
-    vm_name: ddc_template
+    vm_name: "{{vm_name}}"
     datacenter: "{{ vsphere_datacenter }}"
     datastore: "{{ deploy_datastore }}"
     esxihostname: "{{ execution_host }}"
-    disk_file_path: "/images/MSP7.1_DDC.x86_64-R2E-10.20160407.vmdk"
-  when: "'ddc' in vm_types"  
+    disk_file_path: "/images/{{vmdk_name}}"
 
-- name: Mount vmdk root file system for MON
-  action:
-    module: hw_vsphere_attach_disk
-    vcenter: "{{ vsphere_vcenter }}"
-    vcusername: "{{ vsphere_vcusername }}"
-    vcpassword: "{{ vsphere_vcpassword }}"
-    vm_name: mon_template
-    datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ deploy_datastore }}"
-    esxihostname: "{{ execution_host }}"
-    disk_file_path: "/images/MSP7.1_MON.x86_64-R2E-9.20160407.vmdk"
-  when: "'mon' in vm_types"

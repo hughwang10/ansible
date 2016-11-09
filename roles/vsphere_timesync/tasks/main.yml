@@ -1,56 +1,16 @@
 ---
-- name: Set timesync attribute MN
+- name: Set timesync attribute
   action:
     module: hw_vsphere_update_vm
     vcenter: "{{ vsphere_vcenter }}"
     vcusername: "{{ vsphere_vcusername }}"
     vcpassword: "{{ vsphere_vcpassword }}"
-    vm_name: mn_template
+    vm_name: "{{item}}_template"
     datacenter: "{{ vsphere_datacenter }}"
     datastore: "{{ deploy_datastore }}"
     esxihostname: "{{ execution_host }}"
     time_sync: True
     poweroff_mode: hard
-  when: "'mn' in vm_types"
+  with_items: "{{vm_types}}"
 
-- name: Set timesync attribute TS
-  action:
-    module: hw_vsphere_update_vm
-    vcenter: "{{ vsphere_vcenter }}"
-    vcusername: "{{ vsphere_vcusername }}"
-    vcpassword: "{{ vsphere_vcpassword }}"
-    vm_name: ts_template
-    datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ deploy_datastore }}"
-    esxihostname: "{{ execution_host }}"
-    time_sync: True
-    poweroff_mode: hard
-  when: "'ts' in vm_types"  
 
-- name: Set timesync attribute DDC
-  action:
-    module: hw_vsphere_update_vm
-    vcenter: "{{ vsphere_vcenter }}"
-    vcusername: "{{ vsphere_vcusername }}"
-    vcpassword: "{{ vsphere_vcpassword }}"
-    vm_name: ddc_template
-    datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ deploy_datastore }}"
-    esxihostname: "{{ execution_host }}"
-    time_sync: True
-    poweroff_mode: hard
-  when: "'ddc' in vm_types" 
-
-- name: Set timesync attribute MON
-  action:
-    module: hw_vsphere_update_vm
-    vcenter: "{{ vsphere_vcenter }}"
-    vcusername: "{{ vsphere_vcusername }}"
-    vcpassword: "{{ vsphere_vcpassword }}"
-    vm_name: mon_template
-    datacenter: "{{ vsphere_datacenter }}"
-    datastore: "{{ deploy_datastore }}"
-    esxihostname: "{{ execution_host }}"
-    time_sync: True
-    poweroff_mode: hard
-  when: "'mon' in vm_types" 
