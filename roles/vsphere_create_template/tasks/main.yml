@@ -146,19 +146,19 @@
         network_type: standard
       nic3:
         type: vmxnet3
-        network: "{{Internet_name}}"
+        network: "{{AccessIngress_name}}"
         network_type: standard
       nic4:
         type: vmxnet3
-        network: "{{AccessIngress_name}}"
+        network: "{{InternetIngress_name}}"
         network_type: standard
       nic5:
         type: vmxnet3
-        network: "{{InternetIngress_name}}"
+        network: "{{Internal_name}}"
         network_type: standard
       nic6:
         type: vmxnet3
-        network: "{{Internal_name}}"
+        network: "{{Internet_name}}"
         network_type: standard
     vm_hardware:
       memory_mb: 6144

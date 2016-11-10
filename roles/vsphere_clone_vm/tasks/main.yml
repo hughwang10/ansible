@@ -9,9 +9,10 @@
     from_template: yes
     cluster: afg_cluster
     template_src: "{{template_src}}"
+    power_on_after_clone: False
     esxi:
       datacenter: "{{ vsphere_datacenter }}"
       datastore: "{{ deploy_datastore }}"
-      hostname: "{{ execution_host }}"
-    power_on_after_clone: False
+      hostname: "{{ execution_host }}"        
+
  

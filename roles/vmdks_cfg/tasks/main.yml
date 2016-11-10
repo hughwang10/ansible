@@ -1,6 +1,6 @@
 ---
-# - name: create {{vmdk_images_dir}} if not exist
-#   file: path="{{vmdk_images_dir}}" state=directory mode=0755
+- name: create {{vmdk_images_dir}} if not exist
+  file: path="{{vmdk_images_dir}}" state=directory mode=0755
 
 - name: file list in {{vmdk_gz_images_dir}}
   find: "path={{vmdk_gz_images_dir}} patterns='*.vmdk.gz'" 
