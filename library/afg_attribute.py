@@ -9,7 +9,7 @@ def afg_get(afg_attribute,command,module):
     return output.strip()
 
 def afg_set(afg_attribute,afg_attribute_value,command,module):
-    proc = subprocess.Popen([command + " set " + afg_attribute + " " + afg_attribute_value], stdout=subprocess.PIPE, shell=True)
+    proc = subprocess.Popen([command + " set " + afg_attribute + " '" + afg_attribute_value + "'"], stdout=subprocess.PIPE, shell=True)
     proc.communicate()
     if proc.returncode != 0:
         module.fail_json(msg='command set failed with ' + str(proc.returncode))

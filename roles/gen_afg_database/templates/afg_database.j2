@@ -1,3 +1,9 @@
+{% if afg_psql_database.NAF %}
+delete from NAF;
+{% for item in afg_psql_database.NAF %}
+insert into NAF (fqdn,uasecprotoid,sendimpitonaf,nafipaddress,description) values ('{{item.fqdn}}','{{item.uasecprotoid}}','{{item.sendimpitonaf}}','{{item.nafipaddress}}','{{item.description}}');
+{% endfor%}
+{% endif%}
 delete from DIAMETERPEER;
 delete from DIAMETERPEERLIST;
 {% for item in afg_psql_database.Diameter.Peers %}

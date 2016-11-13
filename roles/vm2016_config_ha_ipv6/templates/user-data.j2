@@ -164,6 +164,7 @@ timezone: {{VM_TIMEZONE}}
  - [ sh, -xc, "sed -i '/trap2sink.*public 8162/d' /etc/snmp/snmpd.conf" ]
 {% endif %}
  - [ sh, -xc, "echo trap2sink {{ipaddr_internal}}:8162 ESA-PC >> /etc/snmp/snmpd.conf" ]
+ - [ sh, -xc, "sed -i 's/rocommunity public 127.0.0.1/rocommunity publicMiep 127.0.0.1/' /etc/snmp/snmpd.conf" ]
  - [ sh, -xc, "/etc/init.d/snmpd restart" ]
 {% endblock runcmd_snmp %}
 

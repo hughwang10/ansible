@@ -4,11 +4,10 @@
     afg_attr: "{{ afg_attr|default({})|combine(item.value) }}"
   with_dict: "{{afg_attributes}}"
 
-- name: set/audit afg attribute
+- name: set afg attribute - {{afg_attribute_confirm}}
   afg_attribute: 
     attribute_cluster: "{{CLUSTER_ID}}"
     attribute: "{{item.key}}"
     attribute_value: "{{item.value}}" 
     attribute_confirm: "{{afg_attribute_confirm}}" 
   with_dict: "{{afg_attr}}"
-  delegate_to: "{{IPV4_ADDRESS_OF_OAM_MN}}" 

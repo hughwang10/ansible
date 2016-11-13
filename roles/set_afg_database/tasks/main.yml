@@ -1,0 +1,21 @@
+---
+- name: copy afg.sql
+  copy: 
+    src: "{{output_dir}}/afg.sql"
+    dest: /var/tmp/afg.sql
+    mode: 0644 
+  register: rst      
+
+- name: import data
+  shell: su -s /bin/bash - msausr -c "PGPASSWORD=wapwap12 psql -U msa < /var/tmp/afg.sql"
+  when: "{{rst.changed}}" 
+  register: rst
+
+- debug: msg="{{rst.stdout_lines}}"
+  when: "{{rst.changed}}"
+
+- name: remove afg.sql
+  file: path=/var/tmp/afg.sql state=absent
+  when: "{{rst.changed}}"  
+
+
