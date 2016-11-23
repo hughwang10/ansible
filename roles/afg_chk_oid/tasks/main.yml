@@ -1,0 +1,19 @@
+---
+- name: check afg oid
+  shell: >
+    snmpwalk
+    -v 2c
+    -c publicMiep
+    "{{ip_oam}}:161"
+    "{{item}}"
+  delegate_to: "{{ip_oam}}"  
+  with_items: "{{OIDs}}"
+  register: rst
+- name: result list
+  set_fact:
+    oid_rst: "{{oid_rst | default([]) + item.stdout_lines}}"
+  with_items:
+    - "{{rst.results}}"   
+
+- debug: msg="{{oid_rst}}"
+

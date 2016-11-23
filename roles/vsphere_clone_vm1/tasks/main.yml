@@ -1,0 +1,21 @@
+---
+- name: Clone {{template_src}} --> {{guest_vm}}
+  hw_vsphere_guest:
+    vcenter_hostname: "{{ vsphere_vcenter }}"
+    username: "{{ vsphere_vcusername }}"
+    password: "{{ vsphere_vcpassword }}"
+    guest: "{{guest_vm}}"
+    validate_certs: False
+    from_template: yes
+    cluster: afg_cluster
+    template_src: "{{template_src}}"
+    power_on_after_clone: False
+    esxi:
+      datacenter: "{{ vsphere_datacenter }}"
+      hostname: "{{ execution_host }}" 
+    vm_disk:
+      disk1:
+        size_gb: 20
+        type: thin
+        datastore: "{{deploy_datastore}}"      
+     

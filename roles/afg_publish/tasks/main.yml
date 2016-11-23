@@ -1,0 +1,57 @@
+---
+- name: create design directorys 
+  file: 
+    path: "{{publish_dir}}/design" 
+    state: directory 
+    mode: 0755
+
+- name: create iid directorys 
+  file: 
+    path: "{{publish_dir}}/iid" 
+    state: directory 
+    mode: 0755
+
+- name: create provision directorys 
+  file: 
+    path: "{{publish_dir}}/provision" 
+    state: directory 
+    mode: 0755
+
+- name: grab file list
+  find: path="{{output_dir}}" patterns="*" file_type="directory" 
+  register: rst   
+
+- name: set fact
+  set_fact: 
+    vm_names: "{{vm_names | default([]) + [item.path | regex_replace('^.*/(.*)$', '\\1')]}}"
+  with_items: "{{rst.files}}"
+
+- name: copy iid files
+  copy: 
+    src: "{{output_dir}}/{{item}}/{{item}}.iso" 
+    dest: "{{publish_dir}}/iid/{{item}}.iso" 
+    mode: 0644
+  with_items: "{{vm_names | sort()}}"  
+
+- name: copy userdata files
+  copy: 
+    src: "{{output_dir}}/{{item}}/user-data" 
+    dest: "{{publish_dir}}/iid/{{item}}_user_data.txt" 
+    mode: 0644
+  with_items: "{{vm_names | sort()}}" 
+
+- name: copy attributs file
+  copy: 
+    src: "{{item}}" 
+    dest: "{{publish_dir}}/provision/" 
+    mode: 0644
+  with_fileglob:
+    - "{{output_dir}}/*.txt" 
+
+- name: copy design file
+  copy: 
+    src: "{{item}}" 
+    dest: "{{publish_dir}}/design/" 
+    mode: 0644
+  with_fileglob:
+    - "{{playbook_dir}}/group_vars/all/afg_*.yml" 

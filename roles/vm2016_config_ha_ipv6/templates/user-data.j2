@@ -164,7 +164,7 @@ timezone: {{VM_TIMEZONE}}
  - [ sh, -xc, "sed -i '/trap2sink.*public 8162/d' /etc/snmp/snmpd.conf" ]
 {% endif %}
  - [ sh, -xc, "echo trap2sink {{ipaddr_internal}}:8162 ESA-PC >> /etc/snmp/snmpd.conf" ]
- - [ sh, -xc, "sed -i 's/rocommunity public 127.0.0.1/rocommunity publicMiep 127.0.0.1/' /etc/snmp/snmpd.conf" ]
+ - [ sh, -xc, "sed -i 's/rocommunity public 127.0.0.1/rocommunity publicMiep {{ipaddr_oam}}/' /etc/snmp/snmpd.conf" ]
  - [ sh, -xc, "/etc/init.d/snmpd restart" ]
 {% endblock runcmd_snmp %}
 
@@ -311,7 +311,7 @@ timezone: {{VM_TIMEZONE}}
     STARTMODE='onboot'
     USERCONTROL='no'
     LABEL_01V6=01V6
-    IPADDR_01V6='{{ipaddr_access_ipv6}}'    
+    IPADDR_01V6='{{ipaddr_access_ipv6}}'
    path: /etc/sysconfig/network/ifcfg-eth2
    owner: root:root
    permissions: '0644'

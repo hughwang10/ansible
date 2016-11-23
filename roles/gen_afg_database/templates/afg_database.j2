@@ -1,3 +1,9 @@
+{% if db_txt %}
+# Start #
+su -s /bin/bash - msausr -c "bash"
+PGPASSWORD=wapwap12 psql -U msa
+\set ON_ERROR_STOP 1
+{% endif %}
 {% if afg_psql_database.NAF %}
 delete from NAF;
 {% for item in afg_psql_database.NAF %}
@@ -26,3 +32,8 @@ INSERT INTO XDMSPOOLS (XDMSPOOLID, XDMSPOOLNAME) VALUES (100,'{{afg_psql_databas
 INSERT INTO XDMSPOOLMAP (XDMSPOOLID, XDMSERVERID, PRIORITY) VALUES (100,{{100 + loop.index - 1}},1);
 {% endfor%}
 INSERT INTO AUIDXDMSPOOLMAP (AUIDNAME, XDMSPOOLID) VALUES ('{{afg_psql_database.AP.auids.auid}}',100);
+{% if db_txt %}
+\q
+exit
+# Done! #
+{% endif %}

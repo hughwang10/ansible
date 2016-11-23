@@ -655,7 +655,6 @@ def vmdisk_id(vm, current_datastore_name):
 def deploy_template(vsphere_client, guest, resource_pool, template_src, esxi, module, cluster_name, snapshot_to_clone, power_on_after_clone, vm_extra_config):
     vmTemplate = vsphere_client.get_vm_by_name(template_src)
     vmTarget = None
-
     if esxi:
         datacenter = esxi['datacenter']
         esxi_hostname = esxi['hostname']

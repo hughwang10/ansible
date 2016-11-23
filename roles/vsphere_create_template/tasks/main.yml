@@ -43,8 +43,8 @@
         network: "{{Internal_name}}"
         network_type: standard
     vm_hardware:
-      memory_mb: 5120
-      num_cpus: 2
+      memory_mb: 8192
+      num_cpus: 4
       osid: sles11_64Guest
       scsi: lsi
       vm_cdrom:
@@ -100,8 +100,8 @@
         network: "{{Internal_name}}"
         network_type: standard
     vm_hardware:
-      memory_mb: 6144
-      num_cpus: 4
+      memory_mb: 12288
+      num_cpus: 8
       osid: sles11_64Guest
       scsi: lsi
       vm_cdrom:
@@ -161,7 +161,7 @@
         network: "{{Internet_name}}"
         network_type: standard
     vm_hardware:
-      memory_mb: 6144
+      memory_mb: 8192
       num_cpus: 4
       osid: sles11_64Guest
       scsi: lsi
@@ -210,8 +210,8 @@
         network: "{{Access_name}}"
         network_type: standard
     vm_hardware:
-      memory_mb: 4096
-      num_cpus: 2
+      memory_mb: 12288
+      num_cpus: 4
       osid: sles11_64Guest
       scsi: lsi
       vm_cdrom:
@@ -255,8 +255,8 @@
         network: "{{Internal_name}}"
         network_type: standard
     vm_hardware:
-      memory_mb: 5120
-      num_cpus: 2
+      memory_mb: 8192
+      num_cpus: 4
       osid: sles11_64Guest
       scsi: lsi
       vm_cdrom:
