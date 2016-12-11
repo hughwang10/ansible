@@ -93,7 +93,7 @@
         network_type: standard
       nic4:
         type: vmxnet3
-        network: "{{ControlPlaneSig_name}}"
+        network: "{{CPS_name}}"
         network_type: standard
       nic5:
         type: vmxnet3

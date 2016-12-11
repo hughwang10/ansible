@@ -7,7 +7,20 @@
     username: "{{execution_host_username}}"
     password: "{{execution_host_password}}"
     switch_name: "{{switch_name}}"
+    nic_name1: "{{nic_name}}"
     state: present  
+  when: nic_name is defined
+
+- name: Add a VMware vSwitch - {{switch_name}}
+  local_action:
+    module: hw_vmware_vswitch
+    validate_certs: False
+    hostname: "{{execution_host}}"
+    username: "{{execution_host_username}}"
+    password: "{{execution_host_password}}"
+    switch_name: "{{switch_name}}"
+    state: present  
+  when: nic_name is not defined
 
 - name: Add  VM Portgroup - {{portgroup_name}} to {{switch_name}}
   local_action:
