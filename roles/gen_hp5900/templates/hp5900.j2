@@ -1,0 +1,136 @@
+# initial config #
+# SW1 #
+sys
+sysname {{HOSTNAME_OF_SW1}}
+interface vlan-interface 1
+ip address {{IPV4_ADDRESS_OF_SW1}} {{IPV4_NETMASK_OF_SW}}
+quit
+ssh server enable
+public-key local create rsa
+user-interface vty 0 15
+authentication-mode scheme
+protocol inbound all
+history-command max-size 50
+quit
+local-user admin
+password simple wapwap12
+service-type ssh
+authorization-attribute user-role network-admin
+quit
+ip route 0.0.0.0 0.0.0.0 {{IPV4_DEFAULT_GATEWAY_SW}}
+quit
+save
+# END SW1 #
+
+# SW2 #
+sys
+sysname {{HOSTNAME_OF_SW2}}
+interface vlan-interface 1
+ip address {{IPV4_ADDRESS_OF_SW2}} {{IPV4_NETMASK_OF_SW}}
+quit
+ssh server enable
+public-key local create rsa
+user-interface vty 0 15
+authentication-mode scheme
+protocol inbound ssh
+quit
+local-user admin
+password simple wapwap12
+service-type ssh
+authorization-attribute user-role network-admin
+quit
+ip route 0.0.0.0 0.0.0.0 {{IPV4_DEFAULT_GATEWAY_SW}}
+quit
+save
+# END SW2 #
+
+# end initial config #
+
+# IRF #
+## SW1 ##
+sys
+irf member 1 priority 32
+int {{sw1_irf_port_1}}
+shut
+int {{sw1_irf_port_2}}
+shut
+quit
+irf-port 1/2
+port group interface {{sw1_irf_port_1}}
+port group interface {{sw1_irf_port_2}}
+quit
+## END SW1 ##
+
+## SW2 ##
+sys
+irf member 1 renumber 2
+quit
+save
+reboot
+
+# after rebooting...
+sys
+int {{sw2_irf_port_1}}
+shut
+int {{sw2_irf_port_2}}
+shut
+quit
+irf-port 2/1
+port group interface {{sw2_irf_port_1}}
+port group interface {{sw2_irf_port_2}}
+quit
+
+# briging back interfaces...
+int {{sw2_irf_port_1}}
+undo shut
+int {{sw2_irf_port_2}}
+undo shut
+quit
+irf-port-configuration active
+## END SW2 ##
+
+## SW1 ##
+sys
+int {{sw1_irf_port_1}}
+undo shut
+int {{sw1_irf_port_2}}
+undo shut
+quit
+irf-port-configuration active
+## END SW1 ##
+
+## SW1 ##
+sys
+sysname h3g-afg-sw
+quit
+## END SW1 ##
+
+## h3g-afg-sw ##
+sys
+interface bridge-aggregation 880
+port link-type trunk
+port trunk pvid vlan 880
+port trunk permit vlan 1502 1503 1504
+link-aggregation mode dynamic
+stp edged-port
+quit
+## end h3g-afg-sw ##
+
+
+{% for item in hp5900_vlans %}
+vlan {{item.vlan_id}}
+ name {{item.name}}
+ 
+{% endfor %}
+
+{% for item in hp5900_nqa %}
+nqa entry admin {{item.entry}}
+ type icmp-echo
+  destination ip {{item.dest_ip}}
+  frequency 1000
+  probe count 10
+  probe timeout 100
+  reaction 1 checked-element probe-fail threshold-type consecutive 5 action-type trigger-only
+  vpn-instance vr-access
+
+{% endfor %}

@@ -1,0 +1,32 @@
+---
+- name: Upload slbspv script files to MON
+  copy:
+    src: "{{slbspv_dir}}/{{item}}"
+    dest: "/opt/miep/slbspv"
+    mode: 0550
+    force: yes
+    owner: miepadm
+    group: miepgrp  
+  with_items: 
+    - helpfunction.py
+    - helpfunction.pyc
+    - SwitchConfig
+    - HPSshAPI.py
+    - HPSshAPI.pyc
+    - SshSwitchAPI.py
+    - SshSwitchAPI.pyc
+    - SwitchAPI.py
+    - SwitchAPI.pyc
+    - HPSwitchConfig.exp
+    - SlbMonitor
+
+- name: Upload slbspv script files to MON
+  copy:
+    src: "{{slbspv_dir}}/{{item}}"
+    dest: "/opt/miep/tools"
+    mode: 0550  
+    force: yes
+    owner: miepadm
+    group: miepgrp      
+  with_items: 
+    - slbcrypt

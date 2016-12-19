@@ -1,0 +1,11 @@
+---
+- name: Add  VM Portgroup - {{portgroup_name}} to {{switch_name}}
+  local_action:
+    module: vmware_portgroup
+    validate_certs: False
+    hostname: "{{execution_host}}"
+    username: "{{execution_host_username}}"
+    password: "{{execution_host_password}}"
+    switch_name: "{{switch_name}}"
+    portgroup_name: "{{portgroup_name}}"
+    vlan_id: "{{vlan_id}}"

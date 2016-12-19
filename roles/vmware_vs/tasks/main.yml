@@ -7,9 +7,10 @@
     username: "{{execution_host_username}}"
     password: "{{execution_host_password}}"
     switch_name: "{{switch_name}}"
-    nic_name1: "{{nic_name}}"
+    nic_name1: "{{nic_name1}}"
+    nic_name2: "{{nic_name2}}"    
     state: present  
-  when: nic_name is defined
+  when: (nic_name1 is defined) and (nic_name2 is defined)
 
 - name: Add a VMware vSwitch - {{switch_name}}
   local_action:
@@ -19,16 +20,17 @@
     username: "{{execution_host_username}}"
     password: "{{execution_host_password}}"
     switch_name: "{{switch_name}}"
+    nic_name1: "{{nic_name1}}"    
     state: present  
-  when: nic_name is not defined
+  when: nic_name1 is defined
 
-- name: Add  VM Portgroup - {{portgroup_name}} to {{switch_name}}
+- name: Add a VMware vSwitch - {{switch_name}}
   local_action:
-    module: vmware_portgroup
+    module: hw_vmware_vswitch
     validate_certs: False
     hostname: "{{execution_host}}"
     username: "{{execution_host_username}}"
     password: "{{execution_host_password}}"
-    switch_name: "{{switch_name}}"
-    portgroup_name: "{{portgroup_name}}"
-    vlan_id: 0
+    switch_name: "{{switch_name}}"  
+    state: present  
+  when: nic_name1 is not defined  
