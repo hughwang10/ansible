@@ -1,5 +1,52 @@
 ---
-- name: Upload slbspv script files to MON
+- name: Upload slbspv script files to MON tools
+  delegate_to: "{{IPV4_ADDRESS_OF_OAM_MON}}" 
+  copy:
+    src: "{{slbspv_dir}}/{{item}}"
+    dest: "/opt/miep/tools"
+    mode: 0550  
+    force: yes
+    owner: miepadm
+    group: miepgrp      
+  with_items: 
+    - slbcrypt
+
+- name: get crypt usr
+  delegate_to: "{{IPV4_ADDRESS_OF_OAM_MON}}" 
+  shell: "/opt/miep/tools/slbcrypt -e {{slbspv.usr}}"
+  register: rst
+
+- set_fact:
+    crypt_name: "{{rst.stdout}}"  
+
+- name: get crypt password
+  delegate_to: "{{IPV4_ADDRESS_OF_OAM_MON}}" 
+  shell: "/opt/miep/tools/slbcrypt -e {{slbspv.password}}"
+  register: rst
+
+- set_fact:
+    crypt_password: "{{rst.stdout}}"  
+
+- name: Gen SwitchConfig at {{slbspv_dir}}
+  template: 
+    src: SwitchConfig.j2 
+    dest: "{{slbspv_dir}}/SwitchConfig" 
+    mode: 0644
+
+- name: Gen HPSwitchConfig.exp at {{slbspv_dir}}
+  template: 
+    src: HPSwitchConfig.exp.j2
+    dest: "{{slbspv_dir}}/HPSwitchConfig.exp" 
+    mode: 0644
+
+- name: Gen SwitchConfig.json at {{slbspv_dir}}
+  template: 
+    src: SwitchConfig.json.j2
+    dest: "{{slbspv_dir}}/SwitchConfig.json" 
+    mode: 0644
+
+- name: Upload slbspv script files to MON slbspv
+  delegate_to: "{{IPV4_ADDRESS_OF_OAM_MON}}" 
   copy:
     src: "{{slbspv_dir}}/{{item}}"
     dest: "/opt/miep/slbspv"
@@ -19,14 +66,9 @@
     - SwitchAPI.pyc
     - HPSwitchConfig.exp
     - SlbMonitor
+    - SwitchConfig.json
 
-- name: Upload slbspv script files to MON
-  copy:
-    src: "{{slbspv_dir}}/{{item}}"
-    dest: "/opt/miep/tools"
-    mode: 0550  
-    force: yes
-    owner: miepadm
-    group: miepgrp      
-  with_items: 
-    - slbcrypt
+- name: restart slb switch config
+  delegate_to: "{{IPV4_ADDRESS_OF_OAM_MON}}" 
+  shell: "/opt/miep/tools/nsctrl restart SLB SWITCH CONFIG"
+  register: rst

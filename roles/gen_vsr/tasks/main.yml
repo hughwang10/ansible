@@ -1,0 +1,7 @@
+---
+- name: Gen AFG attributes command file at {{ output_dir }}
+  template: 
+    src: hp_vsr.j2 
+    dest: "{{output_dir}}/hp_vsr.txt" 
+    mode: 0644
+

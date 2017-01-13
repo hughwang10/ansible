@@ -1,0 +1,886 @@
+#! /usr/bin/python
+
+import datetime
+import time
+import commands
+import os
+import sys
+import re
+import imp
+import json
+import socket
+import thread
+import threading
+from SwitchAPI import *
+from helpfunction import *
+
+# ----------------------------------------------------------------------------
+
+MONITOR_DATA_FILE="/opt/miep/slbspv/SlbMonitorData"
+CONFIG_DATA_FILE="/opt/miep/etc/config/ConfigData.json"
+SWITCH_CONF_FILE="/opt/miep/slbspv/SwitchConfig.json"
+
+# ----------------------------------------------------------------------------
+
+def loadClass(className, fileName):
+   begin = fileName.rfind('/') + 1
+
+   end = fileName.rfind('.')
+   if (end == -1):
+      end = len(fileName)
+
+   moduleName = fileName[begin : end]
+
+   try:
+      module = imp.load_source(moduleName, fileName)
+      if (module == None):
+         return False
+
+      globals()[className] = getattr(module, moduleName)
+   except:
+      log('Load switch API module ' + fileName + ' exception: ' + str(sys.exc_info()), LOGLEVEL_EXCEPTION)
+      return False
+   return True
+
+# ----------------------------------------------------------------------------
+
+class ParameterGetter:
+   __configDataMtime = 0
+   __configDataJson = {}
+
+   def __init__(self):
+      ParameterGetter.__configDataMtime = self.__getFileMTime(CONFIG_DATA_FILE)
+      self.load()
+
+   def isConfigurationChanged(self):
+      configFileMTime = self.__getFileMTime(CONFIG_DATA_FILE)
+
+      result = False
+      if configFileMTime and (ParameterGetter.__configDataMtime != configFileMTime):
+         ParameterGetter.__configDataMtime = configFileMTime
+         result = True
+
+      return result
+
+   def load(self):
+      ParameterGetter.__configDataJson = self.__loadFileAsJson(CONFIG_DATA_FILE)
+
+   def get(self, name):
+      try:
+         return ParameterGetter.__configDataJson[name]
+      except exceptions.KeyError as e:
+         log('%s does not exist.' %(name), LOGLEVEL_EXCEPTION)
+      return ''
+
+   def __loadFileAsJson(self, fileName):
+      try:
+         with open(fileName, 'r') as file:
+            lines = file.readlines()
+            jsonStr = ''
+            for i in lines:
+               jsonStr += i
+
+            return json.loads(jsonStr)
+      except Exception as e:
+         log('Exception when reading %s %s' %(fileName, str(e)), LOGLEVEL_EXCEPTION)
+
+      return {}
+
+   def __getFileMTime(self, fileName):
+      try:
+         fileStat = os.stat(r'%s' %(fileName))
+         return fileStat.st_mtime
+      except:
+         info = sys.exc_info()
+         log('Exception when reading %s %s' %(fileName, info[1]), LOGLEVEL_EXCEPTION)
+      return ""
+
+# ----------------------------------------------------------------------------
+
+class ConfigData:
+   "Get configuration parameters vis jsontool, parse IP infomation"
+   clientIpRangeList = []
+   clientIpRangeV6List = []
+   slbIPInfoList = []
+   exceptionIPv4CIDRsList = []
+   exceptionIPv6CIDRsList = []
+   switchLoginData = []
+   __clientIpRangeCfg = ""
+   __clientIpRangeV6Cfg = ""
+   __slbIpListCfg = ""
+   __exceptionIPv4CIDRsListCfg = ""
+   __exceptionIPv6CIDRsListCfg = ""
+
+   def __init__(self, parameterGetter):
+      self.__parameterGetter = parameterGetter
+      self.__alarmReporter = AlarmReporter()
+      self.__loadConfiguration()
+
+   def reloadConfigData(self):
+      self.__parameterGetter.load()
+      self.__loadConfiguration()
+
+   def __loadConfiguration(self):
+      self.result = True
+      self.__getDebugLevel()
+      self.__getExpectTimer()
+      self.__getSlbMoniterInterval()
+      self.__getClientIPRange()
+      self.__getScriptFileName()
+      self.__getSlbIPList()
+      self.__getExceptionCIDRsList()
+      self.__getSlbTrafficType()
+      self.__printConfigData()
+      self.__getLoginData()
+
+   def __getDebugLevel(self):
+      level = 1
+      helpfunction.LOGLEVEL = self.__str2int(level, LOGLEVEL_EXCEPTION)
+
+   def __getExpectTimer(self):
+      timer = 60
+      self.expectScriptTimer = self.__str2int(timer, 3)
+      
+   def __getLoginData(self):
+      self.switchLoginData = []
+      switchHash = {}
+      #switch1IP = self.__parameterGetter.get("slbTorSwitch1IP")
+      switch1IP = "{{slbspv.switch1IP}}"
+      switch1UserName = "{{crypt_name}}"
+      switch1Pwd = "{{crypt_password}}"
+      switch2IP = "{{slbspv.switch2IP}}"
+      switch2UserName = "{{crypt_name}}"
+      switch2Pwd = "{{crypt_password}}"
+            
+      if switch1IP != "" and switch1UserName != "" and switch1Pwd != "":
+          switchHash["ip"] = switch1IP
+          switchHash["userName"] = switch1UserName
+          switchHash["password"] = switch1Pwd
+          self.switchLoginData.append(switchHash)
+
+      if switch2IP != "" and switch2UserName != "" and switch2Pwd != "":
+          switchHash = {}
+          switchHash["ip"] = switch2IP
+          switchHash["userName"] = switch2UserName
+          switchHash["password"] = switch2Pwd
+          self.switchLoginData.append(switchHash)
+             
+   def __getSlbMoniterInterval(self):
+      interval = self.__parameterGetter.get("slbMonitorInterval")
+      self.monitorInterval = self.__str2int(interval, 5)
+
+   def __getClientIPRange(self):
+      try:
+         v4Range = self.__parameterGetter.get("slbClientRangeAndNetmaskv4")
+         v6Range = self.__parameterGetter.get("slbClientRangeAndNetmaskv6")
+         if (v4Range == "") or (v6Range == ""):
+            self.result = False
+
+         if v4Range != self.__clientIpRangeCfg:
+            self.__clientIpRangeCfg = v4Range
+            self.clientIpRangeList = parseIpv4CIDRsList(self.__clientIpRangeCfg)
+            allV4Legal = True
+            for item in self.clientIpRangeList:
+               if isDefaultIPv4CIDRs(item):
+                  self.__alarmReporter.reportSLBspvAlarm("15.7", "Client IP range contains default IPv4 CIDRs[%s]." %(item))
+                  self.clientIpRangeList.remove(item)
+                  allV4Legal = False
+            if allV4Legal:
+               self.__alarmReporter.clearSLBspvAlarm("15.7", "Client IP range contains no default IPv4 CIDRs.")
+
+         if v6Range != self.__clientIpRangeV6Cfg:
+            self.__clientIpRangeV6Cfg = v6Range
+            self.clientIpRangeV6List = parseIpv6CIDRsList(self.__clientIpRangeV6Cfg)
+            allV6Legal = True
+            for item in self.clientIpRangeV6List:
+               if isDefaultIPv6CIDRs(item):
+                  self.__alarmReporter.reportSLBspvAlarm("15.8", "Client IP range contains default IPv6 CIDRs[%s]." %(item))
+                  self.clientIpRangeV6List.remove(item)
+                  allV6Legal = False
+            if allV6Legal:
+               self.__alarmReporter.clearSLBspvAlarm("15.8", "Client IP range contains no default IPv6 CIDRs.")
+
+      except SyntaxError as err:
+          log("Get client IP range error: %s" %str(err), LOGLEVEL_FAILURE)
+          self.result = False
+
+   def __getScriptFileName(self):
+      self.switchAPIScript = self.__parameterGetter.get("slbSwitchAPIScript")
+      if os.path.exists(self.switchAPIScript) == False:
+         log("SwitchAPI Script file " + self.switchAPIScript + " doesn't exist", LOGLEVEL_FAILURE)
+         self.result = False
+
+   def __getSlbIPList(self):
+      slbList = self.__parameterGetter.get("slbIPList")
+      try:
+         if slbList != self.__slbIpListCfg:
+            self.__slbIpListCfg = slbList
+            self.slbIPInfoList = parseSlbIPInfoList(self.__slbIpListCfg)
+      except SyntaxError as err:
+         log("Get SLB IP list error: %s." %str(err), LOGLEVEL_FAILURE)
+
+   def __getExceptionCIDRsList(self) :
+      try:
+         #v4ListString = self.__parameterGetter.get("slbVRInternetExceptionRoutesIPv4")
+         v4ListString = "{{slbspv.v4ListString}}"
+         #v6ListString = self.__parameterGetter.get("slbVRInternetExceptionRoutesIPv6")
+         v6ListString = "{{slbspv.v6ListString}}"
+
+         if (v4ListString != self.__exceptionIPv4CIDRsListCfg):
+            self.__exceptionIPv4CIDRsListCfg = v4ListString
+            self.exceptionIPv4CIDRsList = parseIpv4CIDRsList(self.__exceptionIPv4CIDRsListCfg)
+
+         if (v6ListString != self.__exceptionIPv6CIDRsListCfg):
+            self.__exceptionIPv6CIDRsListCfg = v6ListString
+            self.exceptionIPv6CIDRsList = parseIpv6CIDRsList(self.__exceptionIPv6CIDRsListCfg)
+
+      except SyntaxError as err:
+         log("Get SLB VR Internet Exception Routes IPv4 error: %s." %str(err), LOGLEVEL_FAILURE)
+         self.result = False
+
+   def __str2int(self, strValue, defaultIntValue = 0):
+      try:
+         return int(strValue)
+      except:
+         return defaultIntValue
+
+   def __getSlbTrafficType(self):
+      "check IP type in used, 0: none, 1: ipv4 only, 2: ipv6 only, 3: ipv4+ipv6"
+      V4 = 0
+      V6 = 0
+
+      for index in range(1, 12):
+         isVsActive = self.__parameterGetter.get("slbVsActivate" + str(index))
+         if isVsActive == 1:
+            ports = self.__parameterGetter.get("slbVsPort" + str(index))
+            poolID = self.__parameterGetter.get("slbVsServerPoolId" + str(index))
+            schedulerID = self.__parameterGetter.get("slbVsSchedulerId" + str(index))
+            scheduler = self.__getScheduler(schedulerID)
+            protocol  = self.__getProtocol(schedulerID)
+
+            if ports and poolID and schedulerID and scheduler and protocol:
+               IPType  = self.__parameterGetter.get("slbVsIpType" + str(index))
+               if IPType == 1:
+                  V4 = 1
+               if IPType == 2:
+                  V6 = 2
+
+      self.slbTrafficType = (V4 + V6)
+
+   def __getScheduler(self, schedulerID):
+      if schedulerID == 1:
+         return "dsh"
+      elif schedulerID == 2:
+         return "rr"
+      elif schedulerID == 3 or schedulerID == 4:
+         return "ch"
+      else:
+         return ""
+
+   def __getProtocol(self, schedulerID):
+      if schedulerID == 1 or schedulerID == 3 or schedulerID == 4:
+         return "tcp"
+      elif schedulerID == 2:
+         return "udp"
+      else:
+         return ""
+
+   def __printConfigData(self):
+      l = AutoLock(gLogLock)
+      log("########################## printConfiguration ############################", LOGLEVEL_INFO)
+      log("Slb traffic type: %d" %(self.slbTrafficType), LOGLEVEL_INFO)
+      log("SLB Status Check Interval: %s" %(self.monitorInterval), LOGLEVEL_INFO)
+      log("Switch Config Expect Timer: %s" %(self.expectScriptTimer), LOGLEVEL_INFO)
+      log("Client IPv4 Address Range: %s" %(self.__clientIpRangeCfg), LOGLEVEL_INFO)
+      log("Client IPv6 Address Range: %s" %(self.__clientIpRangeV6Cfg), LOGLEVEL_INFO)
+      log("All SLB IP Addresses: %s" %(self.__slbIpListCfg), LOGLEVEL_INFO)
+      log("Switch Configuration Script: %s" %(self.switchAPIScript), LOGLEVEL_INFO)
+      log("Internet side exception IPv4 routes: %s." %(self.__exceptionIPv4CIDRsListCfg), LOGLEVEL_INFO)
+      log("Internet side exception IPv6 routes: %s." %(self.__exceptionIPv6CIDRsListCfg), LOGLEVEL_INFO)
+      log("##########################################################################", LOGLEVEL_INFO)
+
+# ----------------------------------------------------------------------------
+
+class MonitorData:
+   "read monitor data, get the timestamp and up slb list"
+
+   def __init__(self, configData, monitorFile):
+      self.__configData = configData
+      self.updateTime = ''
+      self.upSlbList = []
+      self.monitorThreadWorking = True
+      self.__monitorFile = monitorFile
+      self.__cksumFile = monitorFile + '.cksum'
+      self.__copiedMonitorData = monitorFile + '.cp'
+      self.__alarmReporter = AlarmReporter()
+      self.__workingTime = '' #timestamp in monitor data
+      self.__wTimestamp = time.time()
+      self.__mTime = 0.0 #timestamp of monitor data modified
+
+   def parseMonitorData(self):
+      if self.__checkMonitorDataFile():
+         self.__parseMonitorDataFile()
+         #self.__printMonitorData()
+
+      self.__checkMonitorThreadWorking()
+
+   def __checkMonitorDataFile(self, retry = 3):
+      checkInterval = 0.001
+
+      while True:
+          if os.path.isfile(self.__monitorFile) and os.path.isfile(self.__cksumFile):
+             fileStat = os.stat(r'%s' %(self.__monitorFile))
+             if fileStat.st_mtime == self.__mTime:
+                #monitor data file is not updated
+                return False
+
+             self.__mTime = fileStat.st_mtime
+
+             cmd = 'cp '+ self.__monitorFile + ' ' + self.__copiedMonitorData
+             result, value = commands.getstatusoutput(cmd)
+             if result == 0:
+                calCksum = '/usr/bin/cksum ' + self.__copiedMonitorData + ' | awk \'{print $1}\''
+                getCksum = '/bin/cat ' + self.__cksumFile + ' | awk \'{print $1}\''
+                calRet, calValue = commands.getstatusoutput(calCksum)
+                getRet, getValue = commands.getstatusoutput(getCksum)
+                if calRet == 0 and getRet == 0 and calValue == getValue:
+                   return True
+                else:
+                   log("Check monitor data file failed.", LOGLEVEL_FAILURE)
+
+          retry = retry - 1
+          if retry <= 0:
+             break
+
+          time.sleep(checkInterval)
+          checkInterval = checkInterval * 2
+      return False
+
+   def __parseMonitorDataFile(self):
+      "Parse monitor data file"
+      tempUpSlbList = []
+      tempWorkTime = ''
+      tempUpdateTime = ''
+      try:
+         with open(self.__copiedMonitorData, "r") as mon_file:
+            for line in mon_file:
+               m = re.match(r'^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\s+up\s*$', line)
+               if m:
+                  tempUpSlbList.append(m.group(1))
+                  continue
+               m = re.match(r'^SlbStatusTableUpdateTimestamp\s+(\d+)\s*$', line)
+               if m:
+                  tempUpdateTime = m.group(1)
+                  continue
+               m = re.match(r'^SlbMonitorWorkingTimestamp\s+(\d+)\s*$', line)
+               if m:
+                  tempWorkTime =  m.group(1)
+
+         if tempWorkTime and tempWorkTime != self.__workingTime:
+            self.upSlbList = tempUpSlbList
+            self.__workingTime = tempWorkTime
+            self.__wTimestamp = time.time()
+
+         if tempUpdateTime and tempUpdateTime != self.updateTime:
+            self.updateTime = tempUpdateTime
+            self.__printMonitorData()
+
+      except IOError as err:
+         log("File error: %s" %str(err), LOGLEVEL_FAILURE)
+
+   def __checkMonitorThreadWorking(self):
+      currTime = time.time()
+      threshold = self.__configData.monitorInterval * 2
+
+      if currTime - self.__wTimestamp > threshold:
+         if self.monitorThreadWorking == True:
+            self.__alarmReporter.reportSLBspvAlarm("15.5", "Slb Monitor process stops working")
+            self.monitorThreadWorking = False
+      else:
+         if self.monitorThreadWorking == False:
+            self.__alarmReporter.clearSLBspvAlarm("15.5", "Slb Monitor process starts working")
+            self.monitorThreadWorking = True
+
+   def __printMonitorData(self):
+      l = AutoLock(gLogLock)
+      log("########################## printSlbMonitorData ############################", LOGLEVEL_INFO)
+      log("SLB_STATUS_TABLE_UPDATE_TIMESTAMP: %s" %(self.updateTime), LOGLEVEL_INFO)
+      log("SLB_MONITOR_WORKING_TIMESTAMP: %s" %(self.__workingTime), LOGLEVEL_INFO)
+      log("SLB_MONITOR_THREAD_WORKING: %s" %(self.monitorThreadWorking), LOGLEVEL_INFO)
+      for slb in self.upSlbList:
+         log("UP_SLB_MONITOR_IP: %s" %(slb), LOGLEVEL_INFO)
+      log("###########################################################################", LOGLEVEL_INFO)
+
+# ----------------------------------------------------------------------------
+
+class SwitchConfigData:
+   "Read SwitchConfig.json"
+
+   def __init__(self, configData):
+      self.__jsonData = None
+      self.__configData = configData
+
+      try:
+         with open(SWITCH_CONF_FILE, 'r') as configFile:
+            lines = configFile.readlines()
+
+            jsonStr = ''
+            for i in lines:
+               jsonStr += i
+
+            self.__jsonData = json.loads(jsonStr)
+      except Exception as err:
+         log("Get switch login configuration error: %s" %(str(err)), LOGLEVEL_EXCEPTION)
+
+   def updateSwitchLoginData(self):
+      try:
+         # make sure self.__jsonData is a list and contains at least one dict member
+         if self.__jsonData and (type(self.__jsonData) == list) and (len(self.__jsonData) > 0):
+            for index in range(len(self.__jsonData)):
+               if type(self.__jsonData[index]) == dict: #member of list is dict
+                  self.__jsonData[index]["mnusername"] = ""
+                  self.__jsonData[index]["mnpassword"] = ""
+                  
+                  for i in range(len(self.__configData.switchLoginData)):
+                     if self.__jsonData[index]["host"] == self.__configData.switchLoginData[i]["ip"]:
+                        self.__jsonData[index]["mnusername"] = self.__configData.switchLoginData[i]["userName"]
+                        self.__jsonData[index]["mnpassword"] = self.__configData.switchLoginData[i]["password"]
+                        break
+               
+
+      except:
+         pass
+
+   def getSwitchConfigDataList(self):
+      try:
+         # make sure self.__jsonData is a list and contains at least one dict member
+         if self.__jsonData and (type(self.__jsonData) == list) and (len(self.__jsonData) > 0):
+            valid = True
+            for index in range(len(self.__jsonData)):
+               if type(self.__jsonData[index]) != dict: #member of list is dict
+                  valid = False
+                  break
+               else:
+                  self.__jsonData[index]["mnusername"] = ""
+                  self.__jsonData[index]["mnpassword"] = ""
+                  for i in range(len(self.__configData.switchLoginData)):
+                     if self.__jsonData[index]["host"] == self.__configData.switchLoginData[i]["ip"]:
+                        self.__jsonData[index]["mnusername"] = self.__configData.switchLoginData[i]["userName"]
+                        self.__jsonData[index]["mnpassword"] = self.__configData.switchLoginData[i]["password"]
+                        break
+            if valid:
+               return self.__jsonData
+      except:
+         pass
+
+      log("Switch config login configuration invalid, please check %s." %(SWITCH_CONF_FILE), LOGLEVEL_FAILURE)
+      return []
+
+# ----------------------------------------------------------------------------
+
+
+class SwitchUpdateWorker:
+
+   def __init__(self, switchConfiguration, monitorData, configData):
+      self.__switchconfig = switchConfiguration
+      self.__alarmReporter = AlarmReporter()
+      self.__monitorData = monitorData
+      self.__configData = configData
+
+      self.__configAccessVR = False
+      self.__configInternetVR = False
+      try:
+         if self.__switchconfig["routerid_access"].strip() != '':
+            self.__configAccessVR = True
+         if self.__switchconfig["routerid_internet"].strip() != '':
+            self.__configInternetVR = True
+      except:
+         pass
+
+   def execTask(self, arg = None):
+      monitorData = self.__monitorData
+      api = deviceApi(self.__switchconfig, self.__configData.expectScriptTimer)
+
+      if (api.initialized() == False):
+         log("SwitchAPI script initialize fail.", LOGLEVEL_FAILURE)
+         return False
+
+      #get current existing routes
+      ret, existingRouteList = self.__getExistingRoutes(api)
+      if ret:
+         #build routes that need updating to switch
+         ret, routeList = self.__analyzeRoute(api,
+                                 monitorData.upSlbList,
+                                 self.__configData.slbIPInfoList,
+                                 self.__configData.clientIpRangeList,
+                                 self.__configData.clientIpRangeV6List)
+         
+         #taofei
+         printRouteEntryList(routeList, "192.168.124.6", 'aaa')
+         printRouteEntryList(existingRouteList, "192.168.124.6", 'bbb')
+         #taofei
+         if ret:
+            #existingRouteList = self.__filterRoute(api,
+            #     existingRouteList,
+            #     self.__configData.exceptionIPv4CIDRsList,
+            #     self.__configData.exceptionIPv6CIDRsList)
+
+            printRouteEntryList(existingRouteList, self.__switchconfig["host"], 'filter')
+            actionList = self.__buildRoutesToUpdate(api, routeList, existingRouteList)
+
+            try:
+               ret, successCount = api.configSwitch(actionList)
+               if ret:
+                  log('Update switch success', LOGLEVEL_INFO)
+                  return True
+               else:
+                  api.fallBackRoute(actionList[0:successCount])
+                  log('Update switch failed', LOGLEVEL_FAILURE)
+            except:
+               info = sys.exc_info()
+               log('Exception when call device class configSwitch() %s' %(info[1]), LOGLEVEL_EXCEPTION)
+      return False
+
+   def __getExistingRoutes(self, api):
+      existingRouteList = []
+
+      try:
+         # For VR Access
+         if self.__configAccessVR:
+            result, routeList = api.fetchRouteList(api.ACCESS_ROUTER)
+            #printRouteEntryList(routeList, "192.168.124.6", 'fetch-access-existing')
+            #print 'routeLis:', routeList
+            if (result):
+               if (routeList != None):
+                  existingRouteList.extend(routeList)
+            else:
+               log("Query (%s) existing route fails" %(api.ACCESS_ROUTER), LOGLEVEL_FAILURE)
+               return False, None
+
+         # For VR Internet
+         if self.__configInternetVR:
+            result, routeList = api.fetchRouteList(api.INTERNET_ROUTER)
+            if (result):
+               if (routeList != None):
+                  existingRouteList.extend(routeList)
+            else:
+               log("Query (%s) existing route fails" %(api.INTERNET_ROUTER), LOGLEVEL_FAILURE)
+               return False, None
+      except:
+         info = sys.exc_info()
+         log('Exception when call device class fetchRouteList() %s' %(info[1]), LOGLEVEL_EXCEPTION)
+         return False, None
+
+      printRouteEntryList(existingRouteList, self.__switchconfig["host"], 'existing')
+
+      return True, existingRouteList
+
+
+   def __analyzeRoute(self, api, upSlbList, slbIPInfoList, clientIpRangeV4List, clientIpRangeV6List):
+      routeList = []
+
+      if (len(slbIPInfoList) == 0):
+         log("SLB IP list is empty", LOGLEVEL_FAILURE)
+         return False, None
+
+      for monitorIP in upSlbList:
+         for info in slbIPInfoList:
+            if (monitorIP == info.monitorIPv4):
+               trafficType = self.__configData.slbTrafficType
+               #ipv4
+               if (trafficType == 1 or trafficType ==3):
+                  if self.__configAccessVR and isIpv4(info.accessIngressIPv4):
+                     routeList.append(RouteEntry('{{slbspv.ecmp_dest_ipv4}}', info.accessIngressIPv4, api.ACCESS_ROUTER))
+                  if self.__configInternetVR and isIpv4(info.internetIngressIPv4):
+                     for clientIpRange in clientIpRangeV4List:
+                        routeList.append(RouteEntry(clientIpRange, info.internetIngressIPv4, api.INTERNET_ROUTER))
+
+               #ipv6
+               if (trafficType == 2 or trafficType ==3):
+                  if self.__configAccessVR and isIpv6(info.accessIngressIPv6):
+                     routeList.append(RouteEntry('{{slbspv.ecmp_dest_ipv6}}', info.accessIngressIPv6, api.ACCESS_ROUTER))
+                  if self.__configInternetVR and isIpv6(info.internetIngressIPv6):
+                     for clientIpRange in clientIpRangeV6List:
+                        routeList.append(RouteEntry(clientIpRange, info.internetIngressIPv6, api.INTERNET_ROUTER))
+
+               #continue to handle the next up slb
+               break
+
+      return True, routeList
+
+   def __filterDefaultRoute(self, api, routeList):
+      filteredRouteList = []
+      #print 'filter-routelist:',routeList
+      for entry in routeList:
+         # Filter access default route.
+         print 'filter-sentry:',entry
+         if (entry.routerName == api.ACCESS_ROUTER):
+            if (isDefaultIPv4CIDRs(entry.destination)):
+               filteredRouteList.append(entry)
+            elif (isDefaultIPv6CIDRs(entry.destination)):
+               filteredRouteList.append(entry)
+
+         # Filter internet default route.
+         elif (entry.routerName == api.INTERNET_ROUTER):
+            if (isDefaultIPv4CIDRs(entry.destination)):
+               continue
+            elif (isDefaultIPv6CIDRs(entry.destination)):
+               continue
+            else:
+               filteredRouteList.append(entry)
+      return filteredRouteList
+
+   def __filterInternetExceptionRoute(self,
+                                      api,
+                                      routeList,
+                                      exceptionIPv4CIDRsList,
+                                      exceptionIPv6CIDRsList):
+      filteredRouteList = []
+      printRouteEntryList(routeList, "192.168.124.6", 'going-filte-existing')
+      for entry in routeList:
+         isNotException = True
+         if (entry.routerName == api.INTERNET_ROUTER):
+            if (isIPv4CIDRs(entry.destination)):
+               for exception in exceptionIPv4CIDRsList:
+                  if (exception == entry.destination):
+                     isNotException = False
+                     break
+            elif (isIPv6CIDRs(entry.destination)):
+               for exception in exceptionIPv6CIDRsList:
+                  if (ipv6CIDRsSimplify(exception) == ipv6CIDRsSimplify(entry.destination)):
+                     isNotException = False
+                     break
+         if (isNotException):
+            filteredRouteList.append(entry)
+      return filteredRouteList
+
+   def __filterRoute(self,
+                     api,
+                     routeList,
+                     exceptionIPv4CIDRsList,
+                     exceptionIPv6CIDRsList):
+      return self.__filterInternetExceptionRoute(api,
+                                              self.__filterDefaultRoute(api, routeList),
+                                              exceptionIPv4CIDRsList,
+                                              exceptionIPv6CIDRsList)
+
+
+   def __buildRoutesToUpdate(self, api, routeList, existingRouteList):
+      actionList = []
+      #print 'BuildRoute-routeList:',routeList
+      #print 'BuildRoute-existingRouteList:',existingRouteList
+
+      if not routeList:
+         return actionList
+
+      for entry in routeList:
+         if existingRouteList:
+            if entry not in existingRouteList:
+               actionList.append((api.ACTION_ADD, entry))
+         else:
+            actionList.append((api.ACTION_ADD, entry))
+
+      for entry in existingRouteList:
+         if entry not in routeList:
+            actionList.append((api.ACTION_DEL, entry))
+
+      return actionList
+
+# ----------------------------------------------------------------------------
+
+class Switch:
+   def __init__(self, id, jsonData, monitorData, configData):
+      self.__id         = id
+      self.__hasNewTask = False
+      self.__isUpdating = False
+      self.__handler    = None
+      self.__failCount  = 0
+      self.__timeTick   = 0
+      self.__switchInfo = jsonData
+      self.__ip         = self.__getSwitchIP()
+      self.__alarmReporter = AlarmReporter()
+      self.__worker = SwitchUpdateWorker(jsonData, monitorData, configData)
+
+   def __del__(self):
+      self.__isUpdating = False
+      self.__failCount  = 0
+      self.__timeTick   = 0
+      self.__handler    = None
+
+   #start to execute switch update task in a new thread. If update task already running, just do nothing.
+   def updateSwitch(self):
+      if self.__isUpdating:
+         self.__hasNewTask = True
+      else:
+         self.__isUpdating = True
+         try:
+            self.__handler = threading.Thread(target=self.__run, args=(self.__worker,))
+            self.__handler.start()
+         except:
+            log("Start switch update task thread fail.", LOGLEVEL_FAILURE)
+            self.__isUpdating = False
+
+   def checkNewTaskAndRetryLastFailUpdate(self):
+      #if already running a task, just do nothing.
+      if self.__isUpdating:
+         return None
+
+      #if configuration changed when in last task, we have a new update task to run.
+      if self.__hasNewTask:
+         self.__hasNewTask = False
+         self.updateSwitch()
+         return None
+
+      #if no new task and last task failed:
+      retryIntervalList = [2, 4, 8, 16, 32, 64, 128]
+      if (self.__failCount > 0):
+         #right time interval to retry? (exponential time waiting)
+         self.__timeTick += 1
+         if(self.__timeTick in retryIntervalList):
+            self.updateSwitch()
+         #keep the interval to be 64s and continue trying
+         if self.__timeTick == 128:
+            self.__timeTick = 64
+
+   #join
+   def __join(self, timeout=None):
+      try:
+         self.__handler.join(timeout)
+      except:
+         pass
+
+   #do the update task, and record the updating status.
+   def __run(self, worker):
+      try:
+         threading.current_thread().setName('sw-' + str(self.__id))
+         result = worker.execTask()
+      except:
+         log("Thread run exception %s." %(str(sys.exc_info())), LOGLEVEL_FAILURE)
+         result = False
+
+      if result:
+         #once success and we are in alarm state, clear alarm.
+         if self.__failCount > 0:
+            self.__alarmReporter.clearSLBspvAlarm("16.6", "Update switch[%s] successful." %(self.__ip))
+         self.__failCount = 0
+      else:
+         #the first time it fails, report an alarm.
+         if self.__failCount == 0:
+            self.__timeTick   = 0
+            self.__alarmReporter.reportSLBspvAlarm("16.6", "Update switch[%s] failed." %(self.__ip))
+         self.__failCount += 1
+
+      self.__isUpdating = False
+
+   def __getSwitchIP(self):
+      try:
+         return self.__switchInfo["host"]
+      except:
+         return ""
+
+# ----------------------------------------------------------------------------
+
+class SwitchManager:
+   lastSlbUpdateTimestamp = ''
+   lastClientIpRangeList = []
+   lastClientIpRangeListV6 = []
+   lastExceptionIPv4CIDRsList = []
+   lastExceptionIPv6CIDRsList = []
+   lastSlbTrafficType = 0
+   scriptIsLoad = False
+   lastScriptPath = ""
+   __switchList = []
+
+   def __init__(self, swConfigData, configData, monitorData):
+      self.__configData = configData
+      self.__alarmReporter = AlarmReporter()
+      self.__monitorData = monitorData
+
+      sList = swConfigData.getSwitchConfigDataList()
+      for index in range(len(sList)):
+         switch = Switch(index, sList[index], self.__monitorData, self.__configData)
+         self.__switchList.append(switch)
+
+   def handleSwitchUpdate(self):
+      #check and load the api script
+      if not self.__loadScript(self.__configData.switchAPIScript):
+         log("SwitchAPI script is not loaded.", LOGLEVEL_FAILURE)
+         return None
+
+      monitorData = self.__monitorData
+      if self.__checkIfNeedUpdateSwitch(monitorData):
+         for switch in self.__switchList:
+            switch.updateSwitch()
+         self.saveLast(monitorData)
+      else:
+         for switch in self.__switchList:
+            switch.checkNewTaskAndRetryLastFailUpdate()
+
+   def saveLast(self, monitorData):
+      self.lastSlbTrafficType = self.__configData.slbTrafficType
+      self.lastSlbUpdateTimestamp = monitorData.updateTime
+      self.lastClientIpRangeList = self.__configData.clientIpRangeList
+      self.lastClientIpRangeListV6 = self.__configData.clientIpRangeV6List
+      self.lastExceptionIPv4CIDRsList = self.__configData.exceptionIPv4CIDRsList
+      self.lastExceptionIPv6CIDRsList = self.__configData.exceptionIPv6CIDRsList
+
+   def __checkIfNeedUpdateSwitch(self, monitorData):
+      # if no VG is available, do not change the routes
+      if self.__configData.slbTrafficType == 0:
+         return False
+
+      return ((self.lastSlbTrafficType != self.__configData.slbTrafficType) or
+            ((monitorData.updateTime != '0') and (self.lastSlbUpdateTimestamp != monitorData.updateTime)) or
+            (len(set(self.lastClientIpRangeList) ^ set(self.__configData.clientIpRangeList)) != 0) or
+            (len(set(self.lastClientIpRangeListV6) ^ set(self.__configData.clientIpRangeV6List)) != 0) or
+            (len(set(self.lastExceptionIPv4CIDRsList) ^ set(self.__configData.exceptionIPv4CIDRsList)) != 0) or
+            (len(set(self.lastExceptionIPv6CIDRsList) ^ set(self.__configData.exceptionIPv6CIDRsList)) != 0) or
+            (len(set(self.lastExceptionIPv4CIDRsList) ^ set(self.__configData.exceptionIPv4CIDRsList)) != 0) or
+            (len(set(self.lastExceptionIPv6CIDRsList) ^ set(self.__configData.exceptionIPv6CIDRsList)) != 0))
+
+   def __loadScript(self, scriptPath):
+      if (self.lastScriptPath == scriptPath and self.scriptIsLoad):
+         return True
+
+      if (len(scriptPath) == 0):
+         return self.scriptIsLoad
+
+      loadSuccess = loadClass('deviceApi', scriptPath)
+      if (loadSuccess == True):
+         if (issubclass(deviceApi, SwitchAPI) == False):
+            log('The deviceApi is not a subclass of SwitchAPI in ' + scriptPath, LOGLEVEL_EXCEPTION)
+            self.scriptIsLoad = False
+         else:
+            self.lastScriptPath = scriptPath
+            self.scriptIsLoad = True
+
+      return self.scriptIsLoad
+
+# ----------------------------------------------------------------------------
+
+# main
+if __name__ == '__main__':
+   threading.current_thread().setName('main')
+
+   getter = ParameterGetter()
+   configData = ConfigData(getter)
+   monitorData = MonitorData(configData, MONITOR_DATA_FILE)
+   swConfigData = SwitchConfigData(configData)
+   switchManager = SwitchManager(swConfigData, configData, monitorData)
+
+   while True:
+      time.sleep(1)
+
+      if getter.isConfigurationChanged():
+         configData.reloadConfigData()
+         swConfigData.updateSwitchLoginData()
+
+      if configData.result == False:
+         continue
+
+      monitorData.parseMonitorData()
+      if monitorData.monitorThreadWorking == False:
+         continue
+
+      switchManager.handleSwitchUpdate()
+

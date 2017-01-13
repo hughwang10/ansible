@@ -5,23 +5,23 @@ ssh server enable
 public-key local create rsa
 
 user-interface vty 0 15
-authentication-mode scheme
-protocol inbound all
-history-command max-size 50
-quit
+ authentication-mode scheme
+ protocol inbound all
+ history-command max-size 50
+ quit
 local-user admin
-password simple wapwap12
-service-type ssh terminal telnet http https
-authorization-attribute user-role network-admin
-quit
+ password simple wapwap12
+ service-type ssh terminal telnet http https
+ authorization-attribute user-role network-admin
+ quit
 ip https enable
 
 {% for item in hp5900_management_sw %}
 # {{item.desc}}
 int {{item.interface}}
-description {{item.desc}}
-ip address {{item.ip_address}} {{item.ip_mask}}
-quit
+ description {{item.desc}}
+ ip address {{item.ip_address}} {{item.ip_mask}}
+ quit
 
 {% endfor %}
 # end initial config #
@@ -30,14 +30,14 @@ quit
 ## SW1 ##
 irf member 1 priority 32
 int {{sw1_irf_port_1}}
-shut
+ shut
 int {{sw1_irf_port_2}}
-shut
-quit
+ shut
+ quit
 irf-port 1/2
-port group interface {{sw1_irf_port_1}}
-port group interface {{sw1_irf_port_2}}
-quit
+ port group interface {{sw1_irf_port_1}}
+ port group interface {{sw1_irf_port_2}}
+ quit
 ## END SW1 ##
 
 ## SW2 ##
@@ -48,149 +48,173 @@ reboot
 
 # after rebooting...
 int {{sw2_irf_port_1}}
-shut
+ shut
 int {{sw2_irf_port_2}}
-shut
-quit
+ shut
+ quit
 irf-port 2/1
-port group interface {{sw2_irf_port_1}}
-port group interface {{sw2_irf_port_2}}
-quit
+ port group interface {{sw2_irf_port_1}}
+ port group interface {{sw2_irf_port_2}}
+ quit
 int {{sw2_irf_port_1}}
-undo shut
+ undo shut
 int {{sw2_irf_port_2}}
-undo shut
-quit
+ undo shut
+ quit
 irf-port-configuration active
 save
 
 ## SW1: briging back interfaces...
 int {{sw1_irf_port_1}}
-undo shut
+ undo shut
 int {{sw1_irf_port_2}}
-undo shut
-quit
+ undo shut
+ quit
 irf-port-configuration active
-sysname h3g-afg-sw
+sysname h3g-afg-switch
 
 save
 # end IRF #
 
+## switch: vpn instance ##
+{% for item in hp5900_vpn_instances %}
+ip vpn-instance {{item.name}}
+ route-distinguisher {{item.rd}}
+ quit
+{% endfor %}
+## end vpn instance ##
+
 ## vlans core ##
 {% for item in hp5900_vlans_core %}
 vlan {{item.vlan_id}}
-name {{item.name}}
-quit
+ name {{item.name}}
+ quit
 int vlan-interface {{item.vlan_id}}
-ip address {{item.interface_ip}} {{item.interface_mask}}
-quit
+ desc {{item.name}}
+ ip address {{item.interface_ip}} {{item.interface_mask}}
+ quit
 {% endfor %}
 ## end vlans ##
 
 ## vlans switch ##
 {% for item in hp5900_vlans_switch %}
 vlan {{item.vlan_id}}
-name {{item.name}}
-quit
+ name {{item.name}}
+ quit
 int vlan-interface {{item.vlan_id}}
-ip address {{item.interface_ip}} {{item.interface_mask}}
-quit
+ desc {{item.name}}
+ ip binding vpn-instance {{item.vpn_instance}}
+ ip address {{item.interface_ip}} {{item.interface_mask}}
+ quit
 {% endfor %}
 ## end vlans ##
 
 ## vlans server ##
 {% for item in hp5900_vlans_server %}
 vlan {{item.vlan_id}}
-name {{item.name}}
-quit
+ name {{item.name}}
+ quit
 int vlan-interface {{item.vlan_id}}
-ip address {{item.interface_ip}} {{item.interface_mask}}
-quit
+ desc {{item.name}}
+ ip address {{item.interface_ip}} {{item.interface_mask}}
+ quit
 {% endfor %}
 ## end vlans ##
 
 ## Bridge-Aggregation core##
 {% for item in hp5900_braggs_core%}
 int Bridge-Aggregation {{item.bragg_id}}
-desc {{item.desc}}
-port link-type trunk
-undo port trunk permit vlan 1
-port trunk permit vlan {{item.permit_vlan}}
-port trunk pvid vlan {{item.pvid}}
-link-aggregation mode dynamic
-stp edged-port
+ desc {{item.desc}}
+ port link-type trunk
+ undo port trunk permit vlan 1
+ port trunk permit vlan {{item.permit_vlan}}
+ port trunk pvid vlan {{item.pvid}}
+ link-aggregation mode dynamic
+ stp edged-port
 quit
 int range {{item.port_range}}
-port link-mode bridge
-port link-type trunk
-undo port trunk permit vlan 1
-port trunk permit vlan {{item.permit_vlan}}
-port trunk pvid vlan {{item.pvid}}
-port link-aggregation group {{item.bragg_id}}
-quit
+ port link-mode bridge
+ port link-type trunk
+ undo port trunk permit vlan 1
+ port trunk permit vlan {{item.permit_vlan}}
+ port trunk pvid vlan {{item.pvid}}
+ port link-aggregation group {{item.bragg_id}}
+ quit
 {% endfor %}
 ## end Bridge-Aggregation ##
 
 ## Bridge-Aggregation switch##
 {% for item in hp5900_braggs_switch%}
 int Bridge-Aggregation {{item.bragg_id}}
-desc {{item.desc}}
-port link-type trunk
-undo port trunk permit vlan 1
-port trunk permit vlan {{item.permit_vlan}}
-port trunk pvid vlan {{item.pvid}}
-link-aggregation mode dynamic
-stp edged-port
-quit
+ desc {{item.desc}}
+ port link-type trunk
+ undo port trunk permit vlan 1
+ port trunk permit vlan {{item.permit_vlan}}
+ port trunk pvid vlan {{item.pvid}}
+ link-aggregation mode dynamic
+ stp edged-port
+ quit
 int range {{item.port_range}}
-port link-mode bridge
-port link-type trunk
-undo port trunk permit vlan 1
-port trunk permit vlan {{item.permit_vlan}}
-port trunk pvid vlan {{item.pvid}}
-port link-aggregation group {{item.bragg_id}}
-quit
+ port link-mode bridge
+ port link-type trunk
+ undo port trunk permit vlan 1
+ port trunk permit vlan {{item.permit_vlan}}
+ port trunk pvid vlan {{item.pvid}}
+ port link-aggregation group {{item.bragg_id}}
+ quit
 {% endfor %}
 ## end Bridge-Aggregation ##
 
-## Bridge-Aggregation server##
+## Bridge-Aggregation server ##
 {% for item in hp5900_braggs_server%}
 int Bridge-Aggregation {{item.bragg_id}}
-desc {{item.desc}}
-port link-type trunk
-undo port trunk permit vlan 1
-port trunk permit vlan {{item.permit_vlan}}
-port trunk pvid vlan {{item.pvid}}
-link-aggregation mode dynamic
-stp edged-port
-quit
+ desc {{item.desc}}
+ port link-type trunk
+ undo port trunk permit vlan 1
+ port trunk permit vlan {{item.permit_vlan}}
+ port trunk pvid vlan {{item.pvid}}
+ link-aggregation mode dynamic
+ stp edged-port
+ quit
 int range {{item.port_range}}
-port link-mode bridge
-port link-type trunk
-undo port trunk permit vlan 1
-port trunk permit vlan {{item.permit_vlan}}
-port trunk pvid vlan {{item.pvid}}
-port link-aggregation group {{item.bragg_id}}
-quit
+ port link-mode bridge
+ port link-type trunk
+ undo port trunk permit vlan 1
+ port trunk permit vlan {{item.permit_vlan}}
+ port trunk pvid vlan {{item.pvid}}
+ port link-aggregation group {{item.bragg_id}}
+ quit
 {% endfor %}
 ## end Bridge-Aggregation ##
 
-{% for item in hp5900_vpn_instances %}
-ip vpn-instance {{item.name}}
-route-distinguisher {{item.rd}}
-quit
-{% endfor %}
-
-######################################################################################################
-
+## nqa ##
 {% for item in hp5900_nqa %}
 nqa entry admin {{item.entry}}
  type icmp-echo
-  destination ip {{item.dest_ip}}
-  frequency 1000
-  probe count 10
-  probe timeout 100
-  reaction 1 checked-element probe-fail threshold-type consecutive 5 action-type trigger-only
-  vpn-instance vr-access
-
+ destination ip {{item.dest_ip}}
+ frequency 1000
+ probe count 10
+ probe timeout 100
+ reaction 1 checked-element probe-fail threshold-type consecutive 5 action-type trigger-only
+ vpn-instance {{item.vpn_instance}}
 {% endfor %}
+quit 
+## end nqa ##
+
+## nqa enable ##
+{% for item in hp5900_nqa %}
+nqa schedule admin {{item.entry}} start-time now lifetime forever
+{% endfor %}
+## end nqa enable ##
+
+## nqa track ##
+{% for item in hp5900_nqa %}
+track {{item.track}} nqa entry admin {{item.entry}} reaction 1
+{% endfor %}
+## end nqa track ##
+
+## ip routes ##
+{% for item in hp5900_routes %}
+ip route-static vpn-instance {{item.vpn_instance}} {{item.dest}} {{item.mask}} {{item.next_hop}} {%if item.track is defined %}track {{item.track}}{% endif %} 
+{% endfor %}
+## end ip routes ##

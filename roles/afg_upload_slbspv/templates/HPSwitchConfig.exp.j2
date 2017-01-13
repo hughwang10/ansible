@@ -1,0 +1,137 @@
+#! /usr/bin/expect 
+
+# $argv0: host
+# $argv1: port
+# $argv2: username
+# $argv3: password
+# $argv4: expect timer
+
+set HOST     [lindex $argv 0]
+set PORT     [lindex $argv 1]
+set USERNAME [lindex $argv 2]
+set PASSWORD [lindex $argv 3]
+set EXPTIME  [lindex $argv 4]
+
+set timeout $EXPTIME
+
+log_user 0
+
+proc outputResult {status result} {
+    puts "\{"
+    puts "   \"status\" : \"$status\","
+    if {0 != [llength $result]} {
+        puts "   \"data\" : \["
+        set linenum 0
+        foreach line $result {
+            if {$linenum == [llength $result] - 1} {
+                puts "     \"$line\""
+            } else {
+                puts "     \"$line\","
+            }
+            incr linenum
+        }
+        puts "   \]"
+    } else {
+        puts "  \"data\" : \[\]"
+    }
+    puts "\}"
+}
+
+#spawn ssh -oStrictHostKeyChecking=no $USERNAME@$HOST -p $PORT
+spawn ssh -oStrictHostKeyChecking=no {{slbspv.spawn}}
+
+match_max 104857600
+
+set PROMPT ".*>|]"
+
+set RETCODE 0 
+set SENDPASSWORD 0
+set LOGIN 0
+set CONFIG_MODE 0
+
+expect {
+   eof    { set RETCODE 1 }
+   timeout    { set RETCODE 2 }
+   "No route to host"    { set RETCODE 3 }
+   "Connection refused"    { set RETCODE 4 }
+   "Authentication failed"    { set RETCODE 5 }
+   "password:"    { set SENDPASSWORD 1 }
+}
+
+if { $SENDPASSWORD } {
+   send "$PASSWORD\r"
+   expect {
+      eof    { set RETCODE 1 }
+      timeout   { set RETCODE 2 }
+      -re $PROMPT { set LOGIN 1 }
+      "password:" { set RETCODE 5 }
+   }
+}
+
+if { $LOGIN } {
+    while {[gets stdin command] >= 0} {
+        if {[regexp -nocase {bye|exit|quit|q} $command]} {
+            set RETCODE 0
+            break
+        }
+
+        send "$command\r"
+        expect  {
+            "% " { 
+                set ERROR 1 
+            }
+            -re $PROMPT { 
+                set ERROR 0 
+            }
+            eof {
+                set RETCODE 1
+                break
+            }
+            timeout {
+                set RETCODE 2
+                break
+            }
+        }
+
+        if { $ERROR } {
+            set STATUS "fail"
+            expect {
+                -re $PROMPT {}
+                eof {
+                    set RETCODE 1
+                    break
+                }
+                timeout {
+                    set RETCODE 2
+                    break
+                }
+            }
+            set NUM 0
+        } else {
+            set STATUS "ok"
+            set NUM 1
+        }        
+        
+        set LINES [split [string map {\r ""} $expect_out(buffer)] \n]
+        set RESULT {}
+        for {} {$NUM < [llength $LINES] - 1} {incr NUM} {
+            lappend RESULT [lindex $LINES $NUM]
+        }
+
+        outputResult $STATUS $RESULT
+    }
+
+    send "quit\r"
+    while (true) {
+        expect {
+            eof    {break}
+            -re $PROMPT {break}
+            timeout {
+                set RETCODE 2
+                break
+            }
+        }
+    }
+}
+
+exit $RETCODE
