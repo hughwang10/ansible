@@ -1,0 +1,3 @@
+---
+- name: Gen AFG snmpcounters command file
+  template: src=afg_snmpcounters.j2 dest="{{output_dir}}/afg_snmpcounters.txt" mode=0755
