@@ -6,12 +6,14 @@ psql -U msa -c "select * from snmpcounterseq;"
 psql -U msa -c "alter sequence snmpcounterseq restart {{snmp_start_id}};"
 
 {% for counter in snmpcounters %}
-psql -U msa -c "insert into snmpcounter (id,name,oid,port,type,community,targetservertype) values ({{snmp_start_id + loop.index0}},'{{counter.name}}','{{counter.oid}}',{{snmp_port}},'{{counter.type}}','{{snmp_community}}','{{counter.targetservertype}}');"
+psql -U msa -c "insert into snmpcounter (id,name,oid,port,type,community,targetservertype,description) values ({{snmp_start_id + loop.index0}},'{{counter.name}}','{{counter.oid}}',{{snmp_port}},'{{counter.type}}','{{snmp_community}}','{{counter.targetservertype}}','{{counter.description}}');"
 {% endfor%}
 
-{% for counter in snmpcounters %}
-psql -U msa -c "delete from snmpcounter where  name = '{{counter.name}}';"
-{% endfor%}
+psql -U msa -c "alter sequence snmpcounterseq restart {{snmp_start_id + loop.index0}};"
+
+# Delete all
+psql -U msa -c "delete from snmpcounter where  id >= {{snmp_start_id}};"
+
 
 psql -U msa -c "alter sequence snmpcounterseq restart {{snmp_start_id}};"
 
