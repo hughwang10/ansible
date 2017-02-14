@@ -1,0 +1,20 @@
+---
+- name: add user
+  delegate_to: "{{ item }}"  
+  user:
+    name: "{{name}}"
+    shell: /bin/bash
+    groups: miepgrp,wheel,trusted
+    password: "{{password}}"
+    state: "{{state}}"
+  with_items: "{{ afg_vms }}"
+    
+
+- name: change file mode
+  delegate_to: "{{item[0]}}"      
+  file:
+    path: "/usr/local/esa/conf/{{item[1]}}"
+    mode: 0644
+  with_nested:
+    - "{{ afg_vms }}"    
+    - ['mainCfg.xml','mainCfg.xsd']

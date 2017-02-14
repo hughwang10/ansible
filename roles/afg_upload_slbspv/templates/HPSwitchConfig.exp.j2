@@ -38,7 +38,7 @@ proc outputResult {status result} {
 }
 
 #spawn ssh -oStrictHostKeyChecking=no $USERNAME@$HOST -p $PORT
-spawn ssh -oStrictHostKeyChecking=no {{slbspv.spawn}}
+spawn ssh -oStrictHostKeyChecking=no $USERNAME@$HOST
 
 match_max 104857600
 

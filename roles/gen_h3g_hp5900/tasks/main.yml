@@ -1,0 +1,7 @@
+---
+- name: Gen AFG attributes command file at {{ output_dir }}
+  template: 
+    src: h3g_hp5900.j2 
+    dest: "{{output_dir}}/h3g_hp5900.txt" 
+    mode: 0644
+

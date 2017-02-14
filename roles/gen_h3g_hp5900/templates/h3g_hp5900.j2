@@ -1,0 +1,113 @@
+# initial config #
+{% for device in HP_Devices %}
+# {{device.name}}
+sys
+sysname {{device.name}}
+
+{% for item in hp_vpn_instances %}
+ip vpn-instance {{item.name}}
+ route-distinguisher {{item.rd}}
+ quit
+{% endfor %}
+
+{% for group in device.vlan_group %}
+{% for vlan in group %}
+vlan {{vlan.vlan_id}}
+ name {{vlan.name}}
+ quit
+int vlan-interface {{vlan.vlan_id}}
+ desc {{vlan.name}}
+ ip binding vpn-instance {{vlan.vpn_instance}}
+{% if device.name == 'core' %}
+ ip address {{vlan.interface_ip_core}} {{vlan.interface_mask}}
+{% elif device.name == 'sw1' %}
+ ip address {{vlan.interface_ip_sw1}} {{vlan.interface_mask}}
+{% elif device.name == 'sw2' %}
+ ip address {{vlan.interface_ip_sw2}} {{vlan.interface_mask}}
+{% elif device.name == 'vc1' %}
+ ip address {{vlan.interface_ip_vc1}} {{vlan.interface_mask}}
+{% elif device.name == 'vc2' %}
+ ip address {{vlan.interface_ip_vc2}} {{vlan.interface_mask}}
+{% endif %}
+ quit 
+{% endfor %}
+{% endfor %}
+
+{% endfor %}
+
+# vrrp on hp switch
+{% for vrrp in hp_vrrps %}
+interface Vlan-interface {{vrrp.vlan_interface}}
+ vrrp vrid {{vrrp.vrid}} virtual-ip {{vrrp.virtual_ip}}
+ vrrp vrid {{vrrp.vrid}} priority 110
+ vrrp vrid {{vrrp.vrid}} preempt-mode delay 5
+{% endfor %}
+ quit
+
+
+{% for item in hp_braggs %}
+int Bridge-Aggregation {{item.bragg_id}}
+ desc {{item.desc}}
+ port link-type trunk
+ undo port trunk permit vlan 1
+ port trunk permit vlan {{item.permit_vlan}}
+ link-aggregation mode dynamic
+ #stp edged-port
+ quit
+
+{% endfor %}
+
+
+## Bridge-Aggregation server ##
+{% for item in hp5900_braggs_server%}
+int Bridge-Aggregation {{item.bragg_id}}
+ desc {{item.desc}}
+ port link-type trunk
+ undo port trunk permit vlan 1
+ port trunk permit vlan {{item.permit_vlan}}
+ port trunk pvid vlan {{item.pvid}}
+ link-aggregation mode dynamic
+ stp edged-port
+ quit
+int range {{item.port_range}}
+ port link-mode bridge
+ port link-type trunk
+ undo port trunk permit vlan 1
+ port trunk permit vlan {{item.permit_vlan}}
+ port trunk pvid vlan {{item.pvid}}
+ port link-aggregation group {{item.bragg_id}}
+ quit
+{% endfor %}
+## end Bridge-Aggregation ##
+
+## nqa ##
+{% for item in hp5900_nqa %}
+nqa entry admin {{item.entry}}
+ type icmp-echo
+ destination ip {{item.dest_ip}}
+ frequency 1000
+ probe count 10
+ probe timeout 100
+ reaction 1 checked-element probe-fail threshold-type consecutive 5 action-type trigger-only
+ vpn-instance {{item.vpn_instance}}
+{% endfor %}
+quit 
+## end nqa ##
+
+## nqa enable ##
+{% for item in hp5900_nqa %}
+nqa schedule admin {{item.entry}} start-time now lifetime forever
+{% endfor %}
+## end nqa enable ##
+
+## nqa track ##
+{% for item in hp5900_nqa %}
+track {{item.track}} nqa entry admin {{item.entry}} reaction 1
+{% endfor %}
+## end nqa track ##
+
+## ip routes ##
+{% for item in hp5900_routes %}
+ip route-static vpn-instance {{item.vpn_instance}} {{item.dest}} {{item.mask}} {{item.next_hop}} {%if item.track is defined %}track {{item.track}}{% endif %} 
+{% endfor %}
+## end ip routes ##
