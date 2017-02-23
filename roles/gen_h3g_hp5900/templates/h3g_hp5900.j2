@@ -85,11 +85,11 @@ int range {{item.port_range}}
 nqa entry admin {{item.entry}}
  type icmp-echo
  destination ip {{item.dest_ip}}
- frequency 1000
+ frequency 8000
  probe count 10
  probe timeout 100
  reaction 1 checked-element probe-fail threshold-type consecutive 5 action-type trigger-only
- vpn-instance {{item.vpn_instance}}
+{#  vpn-instance {{item.vpn_instance}} #}
 {% endfor %}
 quit 
 ## end nqa ##
@@ -108,6 +108,7 @@ track {{item.track}} nqa entry admin {{item.entry}} reaction 1
 
 ## ip routes ##
 {% for item in hp5900_routes %}
-ip route-static vpn-instance {{item.vpn_instance}} {{item.dest}} {{item.mask}} {{item.next_hop}} {%if item.track is defined %}track {{item.track}}{% endif %} 
+ip route-static {{item.dest}} {{item.mask}} {{item.next_hop}} {%if item.track is defined %}track {{item.track}}{% endif %} 
 {% endfor %}
 ## end ip routes ##
+{# ip route-static vpn-instance {{item.vpn_instance}} {{item.dest}} {{item.mask}} {{item.next_hop}} {%if item.track is defined %}track {{item.track}}{% endif %}  #}

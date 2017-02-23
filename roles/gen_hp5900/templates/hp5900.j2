@@ -16,14 +16,14 @@ local-user admin
  quit
 ip https enable
 
-{% for item in hp5900_management_sw %}
+{# {% for item in hp5900_management_sw %}
 # {{item.desc}}
 int {{item.interface}}
  description {{item.desc}}
  ip address {{item.ip_address}} {{item.ip_mask}}
  quit
 
-{% endfor %}
+{% endfor %} #}
 # end initial config #
 
 # IRF #
@@ -76,15 +76,15 @@ sysname h3g-afg-switch
 save
 # end IRF #
 
-## switch: vpn instance ##
+{# ## switch: vpn instance ##
 {% for item in hp5900_vpn_instances %}
 ip vpn-instance {{item.name}}
  route-distinguisher {{item.rd}}
  quit
 {% endfor %}
-## end vpn instance ##
+## end vpn instance ## #}
 
-## vlans core ##
+{# ## vlans core ##
 {% for item in hp5900_vlans_core %}
 vlan {{item.vlan_id}}
  name {{item.name}}
@@ -94,9 +94,9 @@ int vlan-interface {{item.vlan_id}}
  ip address {{item.interface_ip}} {{item.interface_mask}}
  quit
 {% endfor %}
-## end vlans ##
+## end vlans ## #}
 
-## vlans switch ##
+{# ## vlans switch ##
 {% for item in hp5900_vlans_switch %}
 vlan {{item.vlan_id}}
  name {{item.name}}
@@ -107,9 +107,9 @@ int vlan-interface {{item.vlan_id}}
  ip address {{item.interface_ip}} {{item.interface_mask}}
  quit
 {% endfor %}
-## end vlans ##
+## end vlans ## #}
 
-## vlans server ##
+{# ## vlans server ##
 {% for item in hp5900_vlans_server %}
 vlan {{item.vlan_id}}
  name {{item.name}}
@@ -119,9 +119,9 @@ int vlan-interface {{item.vlan_id}}
  ip address {{item.interface_ip}} {{item.interface_mask}}
  quit
 {% endfor %}
-## end vlans ##
+## end vlans ## #}
 
-## Bridge-Aggregation core##
+{# ## Bridge-Aggregation core##
 {% for item in hp5900_braggs_core%}
 int Bridge-Aggregation {{item.bragg_id}}
  desc {{item.desc}}
@@ -185,16 +185,16 @@ int range {{item.port_range}}
  port link-aggregation group {{item.bragg_id}}
  quit
 {% endfor %}
-## end Bridge-Aggregation ##
+## end Bridge-Aggregation ## #}
 
 ## nqa ##
 {% for item in hp5900_nqa %}
 nqa entry admin {{item.entry}}
  type icmp-echo
  destination ip {{item.dest_ip}}
- frequency 1000
+ frequency 5000
  probe count 10
- probe timeout 100
+ probe timeout 1000
  reaction 1 checked-element probe-fail threshold-type consecutive 5 action-type trigger-only
  vpn-instance {{item.vpn_instance}}
 {% endfor %}
