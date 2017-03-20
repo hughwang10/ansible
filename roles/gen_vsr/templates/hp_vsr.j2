@@ -2,7 +2,7 @@
 sysname hp_vsr
 
 ssh server enable
-public-key local create rsa
+{# public-key local create rsa #}
 
 user-interface vty 0 15
  authentication-mode scheme
@@ -14,29 +14,52 @@ local-user admin
  service-type ssh terminal telnet http https
  authorization-attribute user-role network-admin
  quit
-ip https enable
+{# ip https enable #}
 # end initial config #
 
 ## vsr: vpn instance ##
-{% for item in hp5900_vpn_instances %}
+{% for item in hp_vpn_instances %}
 ip vpn-instance {{item.name}}
  route-distinguisher {{item.rd}}
  quit
 {% endfor %}
 ## end vpn instance ##
 
-## intface setting ##
-{% for item in hp_vsr_intfaces %}
+##default gateway ##
+ip route-static vpn-instance vr-oam 0.0.0.0 0.0.0.0 {{IPV4_DEFAULT_GATEWAY_SW}}
+
+## VSR1 intface setting ##
+{% for item in hp_vsr1_intfaces %}
 int {{item.interface}}
  description {{item.description}}
- ip binding vpn-instance {{item.vpn_instance}}
+ ip binding vpn-instance {{item.vpn_instance}} 
  ip address {{item.ip_address}} {{item.ip_mask}}
-{% endfor %} 
+{# {% if item.virtualip is defined %}
+ vrrp vrid 1 virtual-ip {{item.virtualip}}
+ vrrp vrid 1 priority 110
+ vrrp vrid 1 preempt-mode delay 5
+{% endif %} #}
+{% endfor %}
+quit
+## end intface setting ##
+
+## VSR2 intface setting ##
+{% for item in hp_vsr2_intfaces %}
+int {{item.interface}}
+ description {{item.description}}
+ ip binding vpn-instance {{item.vpn_instance}} 
+ ip address {{item.ip_address}} {{item.ip_mask}}
+{# {% if item.virtualip is defined %}
+ vrrp vrid 1 virtual-ip {{item.virtualip}}
+ vrrp vrid 1 priority 110
+ vrrp vrid 1 preempt-mode delay 5
+{% endif %}  #}
+{% endfor %}
 quit
 ## end intface setting ##
 
 ## nqa ##
-{% for item in hp5900_nqa %}
+{% for item in hp_nqa %}
 nqa entry admin {{item.entry}}
  type icmp-echo
  destination ip {{item.dest_ip}}
@@ -50,19 +73,19 @@ quit
 ## end nqa ##
 
 ## nqa enable ##
-{% for item in hp5900_nqa %}
+{% for item in hp_nqa %}
 nqa schedule admin {{item.entry}} start-time now lifetime forever
 {% endfor %}
 ## end nqa enable ##
 
 ## nqa track ##
-{% for item in hp5900_nqa %}
+{% for item in hp_nqa %}
 track {{item.track}} nqa entry admin {{item.entry}} reaction 1
 {% endfor %}
 ## end nqa track ##
 
 ## ip routes ##
-{% for item in hp5900_routes %}
+{% for item in hp_routes %}
 ip route-static vpn-instance {{item.vpn_instance}} {{item.dest}} {{item.mask}} {{item.next_hop}} {%if item.track is defined %}track {{item.track}}{% endif %} 
 {% endfor %}
 ## end ip routes ##
