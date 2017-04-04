@@ -3,7 +3,7 @@
 {% for group, attributes in afg_attributes.iteritems() %}
 #{{group}}#
 {% for key, value in attributes.iteritems() %}
-msaconfigctrl.sh -g {{ CLUSTER_ID }} set {{key}} '{{value}}'
+msaconfigctrl.sh -g {{ HA_CLUSTER_ID }} set {{key}} '{{value}}'
 {% endfor%}
 
 {% endfor%}

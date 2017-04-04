@@ -6,7 +6,7 @@
 
 - name: set afg attribute - {{afg_attribute_confirm}}
   afg_attribute: 
-    attribute_cluster: "{{CLUSTER_ID}}"
+    attribute_cluster: "{{HA_CLUSTER_ID}}"
     attribute: "{{item.key}}"
     attribute_value: "{{item.value}}" 
     attribute_confirm: "{{afg_attribute_confirm}}" 
