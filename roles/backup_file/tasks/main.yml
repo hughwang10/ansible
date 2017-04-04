@@ -1,9 +1,0 @@
----
-- name: stat {{backup_file}}  
-  stat: 
-    path: "{{backup_dir}}/{{backup_file}}.orig"
-  register: rst
-
-- name: backup {{backup_file}}    
-  command: "cp {{backup_dir}}/{{backup_file}} {{backup_dir}}/{{backup_file}}.orig"
-  when: rst.stat.exists == False     

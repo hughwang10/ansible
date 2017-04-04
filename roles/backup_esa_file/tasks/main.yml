@@ -1,0 +1,49 @@
+---
+- set_fact: 
+    backup_dir: /usr/local/esa/conf
+    backup_file: usmCfg.xml
+
+- name: stat {{backup_file}}  
+  delegate_to: "{{vm_oam_ip}}"
+  become: True     
+  stat: 
+    path: "{{backup_dir}}/{{backup_file}}.orig1"
+  register: rst
+
+- name: backup {{backup_file}}  
+  delegate_to: "{{vm_oam_ip}}"
+  become: True      
+  command: "cp {{backup_dir}}/{{backup_file}} {{backup_dir}}/{{backup_file}}.orig1"
+  when: rst.stat.exists == False  
+
+- set_fact: 
+    backup_file: vacmCfg.xml
+
+- name: stat {{backup_file}}  
+  delegate_to: "{{vm_oam_ip}}"
+  become: True     
+  stat: 
+    path: "{{backup_dir}}/{{backup_file}}.orig1"
+  register: rst
+
+- name: backup {{backup_file}}  
+  delegate_to: "{{vm_oam_ip}}"
+  become: True       
+  command: "cp {{backup_dir}}/{{backup_file}} {{backup_dir}}/{{backup_file}}.orig1"
+  when: rst.stat.exists == False
+
+- set_fact: 
+    backup_file: trapDestCfg.xml
+
+- name: stat {{backup_file}}  
+  delegate_to: "{{vm_oam_ip}}"
+  become: True     
+  stat: 
+    path: "{{backup_dir}}/{{backup_file}}.orig1"
+  register: rst
+
+- name: backup {{backup_file}}  
+  delegate_to: "{{vm_oam_ip}}"
+  become: True       
+  command: "cp {{backup_dir}}/{{backup_file}} {{backup_dir}}/{{backup_file}}.orig1"
+  when: rst.stat.exists == False  
