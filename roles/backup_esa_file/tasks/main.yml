@@ -1,4 +1,6 @@
 ---
+#usm
+
 - set_fact: 
     backup_dir: /usr/local/esa/conf
     backup_file: usmCfg.xml
@@ -26,6 +28,7 @@
     replace: '\1<usmUser active="yes">\2' 
 
 ###################################################################################################
+#vacm
 
 - set_fact: 
     backup_file: vacmCfg.xml
@@ -52,6 +55,7 @@
     replace: '\1<securityToGroup active="yes">\2'
 
 ###################################################################################################
+#trapdest
 
 - set_fact: 
     backup_file: trapDestCfg.xml 
