@@ -2,6 +2,7 @@
 - set_fact: 
     backup_dir: /usr/local/esa/conf
     backup_file: usmCfg.xml
+    trapdest: "{{trap | default(False)}}"
 
 - name: stat {{backup_file}}  
   delegate_to: "{{vm_oam_ip}}"
@@ -15,6 +16,16 @@
   become: True      
   command: "cp {{backup_dir}}/{{backup_file}} {{backup_dir}}/{{backup_file}}.orig1"
   when: rst.stat.exists == False  
+
+- name: replace in file {{backup_file}}
+  delegate_to: "{{vm_oam_ip}}"
+  become: True      
+  replace:
+    dest: "{{backup_dir}}/{{backup_file}}"
+    regexp: '^(.*)<usmUser active="no">(.*)$'
+    replace: '\1<usmUser active="yes">\2' 
+
+###################################################################################################
 
 - set_fact: 
     backup_file: vacmCfg.xml
@@ -32,8 +43,18 @@
   command: "cp {{backup_dir}}/{{backup_file}} {{backup_dir}}/{{backup_file}}.orig1"
   when: rst.stat.exists == False
 
+- name: replace in file {{backup_file}}
+  delegate_to: "{{vm_oam_ip}}"
+  become: True      
+  replace:
+    dest: "{{backup_dir}}/{{backup_file}}"
+    regexp: '^(.*)<securityToGroup active="no">(.*)$'
+    replace: '\1<securityToGroup active="yes">\2'
+
+###################################################################################################
+
 - set_fact: 
-    backup_file: trapDestCfg.xml
+    backup_file: trapDestCfg.xml 
 
 - name: stat {{backup_file}}  
   delegate_to: "{{vm_oam_ip}}"
@@ -41,9 +62,28 @@
   stat: 
     path: "{{backup_dir}}/{{backup_file}}.orig1"
   register: rst
+  when: trapdest
 
 - name: backup {{backup_file}}  
   delegate_to: "{{vm_oam_ip}}"
   become: True       
   command: "cp {{backup_dir}}/{{backup_file}} {{backup_dir}}/{{backup_file}}.orig1"
-  when: rst.stat.exists == False  
+  when: trapdest and rst.stat.exists == False  
+
+- name: replace in file {{backup_file}}
+  delegate_to: "{{vm_oam_ip}}"
+  become: True      
+  replace:
+    dest: "{{backup_dir}}/{{backup_file}}"
+    regexp: '^(.*)<managerDefinition snmpVersion="v3" active="no">(.*)$'
+    replace: '\1<managerDefinition snmpVersion="v3" active="yes">\2'
+  when: trapdest 
+  
+- name: replace in file {{backup_file}}
+  delegate_to: "{{vm_oam_ip}}"
+  become: True      
+  replace:
+    dest: "{{backup_dir}}/{{backup_file}}"
+    regexp: '^(.*)<ip>127.0.0.1</ip>(.*)$'
+    replace: '\1<ip>{{OPERATOR_NMS_IPV4}}</ip>\2'
+  when: trapdest       
