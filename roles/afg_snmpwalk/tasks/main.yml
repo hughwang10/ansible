@@ -24,7 +24,7 @@
         -x DES
         -X v3AuthSHAPrivDESPrivPassword
         -l authPriv
-        "{{afg_oam.mn_01}}":3161
+        "{{vm_oam_ip}}":3161
         "1.3.6.1.2.1.1"            
         -On
       register: rst
