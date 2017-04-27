@@ -27,7 +27,7 @@ def main():
     afg_attribute = module.params['attribute']
     afg_attribute_value = module.params['attribute_value']
     afg_attribute_confirm = module.params['attribute_confirm']
-    command = "/opt/miep/tools/msa/msaconfigctrl.sh -g " + module.params['attribute_cluster']
+    command = ". /etc/profile && /opt/miep/tools/msa/msaconfigctrl.sh -g " + module.params['attribute_cluster']
     output = afg_get(afg_attribute,command,module)
 
     changes = []

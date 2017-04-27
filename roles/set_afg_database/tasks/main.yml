@@ -11,9 +11,6 @@
 - name: import data
   shell: su -s /bin/bash - msausr -c "PGPASSWORD=wapwap12 psql -U msa < /var/tmp/afg.sql"
   become: true
-  become_method: su
-  become_user: root
-  become_flags: '-s /bin/sh'
   when: rst|changed
   register: rst
 

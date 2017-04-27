@@ -11,7 +11,4 @@
     attribute_value: "{{item.value}}" 
     attribute_confirm: "{{afg_attribute_confirm}}" 
   with_dict: "{{afg_attr}}"
-  become: true
-  become_method: su
-  become_user: root
-  become_flags: '-s /bin/sh'
+  become: true  
