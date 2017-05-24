@@ -6,7 +6,7 @@
   when: dest_mn
 
 - name: copy to remote
-  delegate_to: "{{dest_vm}}"
+  delegate_to: "{{vm_oam_ip}}"
   become: yes
   copy:
     src: "{{item}}"
@@ -20,7 +20,7 @@
   register: rst
 
 - name: copy to remote
-  delegate_to: "{{dest_vm}}"
+  delegate_to: "{{vm_oam_ip}}"
   become: yes
   copy:
     src: "{{item}}"
@@ -33,7 +33,7 @@
   register: rst
 
 - name: remove destTrap from non mn node
-  delegate_to: "{{dest_vm}}"
+  delegate_to: "{{vm_oam_ip}}"
   become: yes
   file:
     path: "/usr/local/esa/conf/trapDestCfg.xml"
@@ -41,7 +41,7 @@
   when: not dest_mn  
 
 - name: restart snmp
-  delegate_to: "{{dest_vm}}"
+  delegate_to: "{{vm_oam_ip}}"
   become: yes          
   service:
     name: snmp
