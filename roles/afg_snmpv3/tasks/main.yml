@@ -1,0 +1,49 @@
+---
+- name: create trapdestcfg
+  template:
+    src: "{{playbook_dir}}/group_vars/files/esa/trapDestCfg.xml.j2"
+    dest: "{{output_dir}}/trapDestCfg.xml"
+  when: dest_mn
+
+- name: copy to remote
+  delegate_to: "{{dest_vm}}"
+  become: yes
+  copy:
+    src: "{{item}}"
+    dest: "/usr/local/esa/conf/{{item | basename}}"
+    force: yes
+  with_items:
+    - "{{playbook_dir}}/group_vars/files/esa/usmCfg.xml"           
+    - "{{playbook_dir}}/group_vars/files/esa/vacmCfg.xml"
+    - "{{output_dir}}/trapDestCfg.xml"
+  when: dest_mn  
+  register: rst
+
+- name: copy to remote
+  delegate_to: "{{dest_vm}}"
+  become: yes
+  copy:
+    src: "{{item}}"
+    dest: "/usr/local/esa/conf/{{item | basename}}"
+    force: yes
+  with_items:
+    - "{{playbook_dir}}/group_vars/files/esa/usmCfg.xml"           
+    - "{{playbook_dir}}/group_vars/files/esa/vacmCfg.xml"
+  when: not dest_mn  
+  register: rst
+
+- name: remove destTrap from non mn node
+  delegate_to: "{{dest_vm}}"
+  become: yes
+  file:
+    path: "/usr/local/esa/conf/trapDestCfg.xml"
+    state: absent
+  when: not dest_mn  
+
+- name: restart snmp
+  delegate_to: "{{dest_vm}}"
+  become: yes          
+  service:
+    name: snmp
+    state: restarted  
+  when: rst.changed  
