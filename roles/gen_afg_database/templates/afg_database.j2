@@ -27,10 +27,12 @@ delete from AUIDXDMSPOOLMAP;
 delete from XDMSPOOLMAP;
 delete from XDMSPOOLS;
 delete from XDMSERVERS;
+select setval('xdmserveridseq',99);
 {% for item in afg_psql_database.AP.servers %}
-INSERT INTO XDMSERVERS (XDMSERVERID, XDMSERVERADDRESS, XDMSERVERPORT, XDMSERVICE) VALUES ({{100 + loop.index - 1}},'{{item.address}}',{{item.port}},'{{item.service}}');
+INSERT INTO XDMSERVERS (XDMSERVERID, XDMSERVERADDRESS, XDMSERVERPORT, XDMSERVICE) VALUES (nextval('xdmserveridseq'),'{{item.address}}',{{item.port}},'{{item.service}}');
 {% endfor%}
-INSERT INTO XDMSPOOLS (XDMSPOOLID, XDMSPOOLNAME) VALUES (100,'{{afg_psql_database.AP.pools.name}}');
+select setval('xdmspoolidseq',99);
+INSERT INTO XDMSPOOLS (XDMSPOOLID, XDMSPOOLNAME) VALUES (nextval('xdmspoolidseq'),'{{afg_psql_database.AP.pools.name}}');
 {% for item in afg_psql_database.AP.servers %}
 INSERT INTO XDMSPOOLMAP (XDMSPOOLID, XDMSERVERID, PRIORITY) VALUES (100,{{100 + loop.index - 1}},1);
 {% endfor%}
