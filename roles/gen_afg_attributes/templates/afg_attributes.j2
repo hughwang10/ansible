@@ -1,9 +1,9 @@
 #start#
 
-{% for group, attributes in afg_attributes.iteritems() %}
+{% for group, attributes in afg_attributes.iteritems()|sort %}
 #{{group}}#
-{% for key, value in attributes.iteritems() %}
-msaconfigctrl.sh -g {{ HA_CLUSTER_ID }} set {{key}} '{{value}}'
+{% for key, value in attributes.iteritems()|sort %}
+msaconfigctrl.sh -g {{ CLUSTER_ID }} set {{key}} '{{value}}'
 {% endfor%}
 
 {% endfor%}
