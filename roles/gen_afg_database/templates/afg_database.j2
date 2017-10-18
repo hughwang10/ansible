@@ -19,9 +19,12 @@ insert into DIAMETERPEER (diameterpeerseq,peerdisplayname,hostname,address,port,
 select setval('diameterpeerlistseq',99);
 select setval('diameterrouteseq',99);
 {% for item in afg_psql_database.Diameter.Route%}
-insert into DIAMETERPEERLIST (diameterpeerlistseq,listname) values (nextval('diameterpeerlistseq'),'list-{{100 + loop.index - 1}}');
-insert into DIAMETERPEERLISTMEMBERS (diameterpeerlistid,peer,prio) values ({{100 + loop.index - 1}},100,1);
-insert into DIAMETERROUTE (diameterrouteseq,application,realm,peerlist) values (nextval('diameterrouteseq'),{{item.application}},'{{item.Realm}}',{{100 + loop.index - 1}});
+{% set outer_loop = loop %}
+insert into DIAMETERPEERLIST (diameterpeerlistseq,listname) values (nextval('diameterpeerlistseq'),'list-{{100 + outer_loop.index - 1}}');
+{% for peer in afg_psql_database.Diameter.Peers %}
+insert into DIAMETERPEERLISTMEMBERS (diameterpeerlistid,peer,prio) values ({{100 + outer_loop.index - 1}},{{100 + loop.index - 1}},1);
+{% endfor %}
+insert into DIAMETERROUTE (diameterrouteseq,application,realm,peerlist) values (nextval('diameterrouteseq'),{{item.application}},'{{item.Realm}}',{{100 + outer_loop.index - 1}});
 {% endfor %}
 delete from AUIDXDMSPOOLMAP;
 delete from XDMSPOOLMAP;
