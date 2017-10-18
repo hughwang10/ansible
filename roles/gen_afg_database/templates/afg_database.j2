@@ -37,7 +37,7 @@ INSERT INTO XDMSERVERS (XDMSERVERID, XDMSERVERADDRESS, XDMSERVERPORT, XDMSERVICE
 select setval('xdmspoolidseq',99);
 INSERT INTO XDMSPOOLS (XDMSPOOLID, XDMSPOOLNAME) VALUES (nextval('xdmspoolidseq'),'{{afg_psql_database.AP.pools.name}}');
 {% for item in afg_psql_database.AP.servers %}
-INSERT INTO XDMSPOOLMAP (XDMSPOOLID, XDMSERVERID, PRIORITY) VALUES (100,{{100 + loop.index - 1}},1);
+INSERT INTO XDMSPOOLMAP (XDMSPOOLID, XDMSERVERID, PRIORITY) VALUES (100,{{100 + loop.index - 1}},{{item.priority}});
 {% endfor%}
 INSERT INTO AUIDXDMSPOOLMAP (AUIDNAME, XDMSPOOLID, USERGROUP) VALUES ('{{afg_psql_database.AP.auids.auid}}',100, '');
 {% if db_txt %}
