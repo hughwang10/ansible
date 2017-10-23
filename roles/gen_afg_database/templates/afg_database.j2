@@ -35,11 +35,18 @@ select setval('xdmserveridseq',99);
 INSERT INTO XDMSERVERS (XDMSERVERID, XDMSERVERADDRESS, XDMSERVERPORT, XDMSERVICE) VALUES (nextval('xdmserveridseq'),'{{item.address}}',{{item.port}},'{{item.service}}');
 {% endfor%}
 select setval('xdmspoolidseq',99);
-INSERT INTO XDMSPOOLS (XDMSPOOLID, XDMSPOOLNAME) VALUES (nextval('xdmspoolidseq'),'{{afg_psql_database.AP.pools.name}}');
-{% for item in afg_psql_database.AP.servers %}
-INSERT INTO XDMSPOOLMAP (XDMSPOOLID, XDMSERVERID, PRIORITY) VALUES (currval('xdmspoolidseq'),currval('xdmspoolidseq') + {{ loop.index - 1}},{{item.priority}});
+{% for pool in afg_psql_database.AP.pools %}
+INSERT INTO XDMSPOOLS (XDMSPOOLID, XDMSPOOLNAME) VALUES (nextval('xdmspoolidseq'),'{{pool.name}}');
+{% endfor %}
+{% for pool in afg_psql_database.AP.pools %}
+{% set pool_loop = loop %}
+{% for server_name in pool.mapping%}
+INSERT INTO XDMSPOOLMAP (XDMSPOOLID, XDMSERVERID, PRIORITY) VALUES ({{ 100 + pool_loop.index - 1}}, {{100 + server_name.server}},{{server_name.priority}});
+{% endfor %}
 {% endfor%}
-INSERT INTO AUIDXDMSPOOLMAP (AUIDNAME, XDMSPOOLID, USERGROUP) VALUES ('{{afg_psql_database.AP.auids.auid}}',currval('xdmspoolidseq'), '');
+{% for auid_name in afg_psql_database.AP.auids%}
+INSERT INTO AUIDXDMSPOOLMAP (AUIDNAME, XDMSPOOLID, USERGROUP) VALUES ('{{auid_name.auid}}',{{100 + auid_name.pool_id}},'{{auid_name.usergroup}}');
+{% endfor %}
 {% if db_txt %}
 \q
 exit
