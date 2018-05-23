@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <!--
+Title:     PM Job Definition
+Date:      {{ ansible_date_time.date }}
+Revision:  PA1
+Author:    ehuiwag
+-->
+<pmJobCollection xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ericsson.com/esa" xsi:schemaLocation="http://www.ericsson.com/esa pmJob.xsd">
+    <!--
+The ESA PMA will run a job named MYJOB4 on counter group named MYGROUPD with immediate start and
+never end producing 3GPP XML output files at default interval (each 15 min).
+-->
+{% for group in pmjob_groups %}
+    <jobDefinition>
+        <jobId>{{group.jobId}}-{{pmjob_hostname}}</jobId>
+        <groupId>{{group.groupId}}</groupId>
+        <granularityPeriod>{{granularityPeriod}}</granularityPeriod>
+    </jobDefinition>
+{% endfor %}
+</pmJobCollection>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Title:     PM Counter Definition
+Date:      {{ ansible_date_time.date }}
+Revision:  PA1
+Author:    ehuiwag
+-->
+<pmCntGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ericsson.com/esa" xsi:schemaLocation="http://www.ericsson.com/esa pmCounter.xsd" active="yes">
+    <identification>
+        <groupId>{{item.groupId}}</groupId>
+    </identification>
+    <description>
+        <groupDescr>{{item.groupDescr}}</groupDescr>
+        <groupInfo>{{item.groupInfo}}</groupInfo>
+    </description>
+{% for counter in item.cntDefinition %}
+{% if counter.cntType is defined %}
+    <cntDefinition active="yes" activeSnmp="yes" cntType="{{counter.cntType}}">
+{% else %}
+    <cntDefinition active="yes" activeSnmp="yes" cntType="CC">
+{% endif %}
+        <identification>
+            <counterId>{{counter.counterId}}</counterId>
+        </identification>
+        <description>
+            <counterDescr>{{counter.counterDescr}}</counterDescr>
+            <counterInfo></counterInfo>
+        </description>
+        <dataSource interval="60">
+            <snmp>
+                <agentIP>{{agentIP}}</agentIP>
+                <agentPort>{{agentPort}}</agentPort>
+                <agentComStr>{{agentComStr}}</agentComStr>
+                <oid>{{counter.oid}}</oid>
+            </snmp>
+        </dataSource>
+    </cntDefinition>
+{% endfor %}
+</pmCntGroup>

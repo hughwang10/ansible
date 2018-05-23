@@ -1,0 +1,15 @@
+---
+    - name: create pmjob for {{pmjob_hostname}}
+      template:
+        src: "pmjob.xml.j2"
+        dest: "{{pmjob_dest}}/pmjob_ts-{{pmjob_hostname}}.xml"
+        mode: 0755
+
+    - name: create pmcounter file for SLB (required by wind3)
+      template:
+        src: "{{playbook_dir}}/group_vars/files/pmcounter.xml.j2"
+        dest: "{{output_dir}}/pmcounters_SLB1.xml"
+        mode: 0755
+      with_items:
+        - "{{pmcounters_SLB1}}"
+      tags: pmcounter        
