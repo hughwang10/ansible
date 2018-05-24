@@ -1,0 +1,24 @@
+---
+- name: make a list
+  set_fact:
+    pmcounter_file_lst: "{{pmjobs_name | map(attribute='file_name') | list | sort }}"
+
+- name: replace the default datastore_interval 300 -> 60
+  delegate_to: "{{afg_hostname}}"
+  become: yes
+  replace:
+    path: "/usr/local/esa/conf/pmCounters/{{item}}"
+    regexp: '<dataSource interval="300">'
+    replace: '<dataSource interval="60">'
+    # backup: yes
+  with_items: "{{pmcounter_file_lst}}"
+
+- name: activate pmcounter files
+  delegate_to: "{{afg_hostname}}"
+  become: yes
+  replace:
+    path: "/usr/local/esa/conf/pmCounters/{{item}}"
+    regexp: '<pmCntGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ericsson.com/esa" xsi:schemaLocation="http://www.ericsson.com/esa PmCounter.xsd" active="no">'
+    replace: '<pmCntGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ericsson.com/esa" xsi:schemaLocation="http://www.ericsson.com/esa PmCounter.xsd" active="yes">'
+    # backup: yes
+  with_items: "{{pmcounter_file_lst}}"
