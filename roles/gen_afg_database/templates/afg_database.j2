@@ -12,6 +12,7 @@ insert into NAF (fqdn,uasecprotoid,sendimpitonaf,nafipaddress,description) value
 {% endif%}
 delete from DIAMETERPEER;
 delete from DIAMETERPEERLIST;
+delete from DIAMETERROUTE;
 select setval('diameterpeerseq',99);
 {% for item in afg_psql_database.Diameter.Peers %}
 insert into DIAMETERPEER (diameterpeerseq,peerdisplayname,hostname,address,port,timeout) values (nextval('diameterpeerseq'),'{{item.DisplayName}}','{{item.HostName}}','{{item.IPAddress}}',{{item.Port}},{{item.Timeout}});
