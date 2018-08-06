@@ -48,7 +48,7 @@ INSERT INTO XDMSPOOLMAP (XDMSPOOLID, XDMSERVERID, PRIORITY) VALUES ({{ 100 + poo
 {% for auid_name in afg_psql_database.AP.auids%}
 INSERT INTO AUIDXDMSPOOLMAP (AUIDNAME, XDMSPOOLID, USERGROUP) VALUES ('{{auid_name.auid}}',{{100 + auid_name.pool_id}},'{{auid_name.usergroup}}');
 {% endfor %}
-UPDATE msaconfig SET value = 'https://{{afg_oam.mn_01}}:9443/cpi/alexserv?li=*' where name = 'alexservlet.cpi.link';
+UPDATE msaconfig SET value = 'https://{{OAM_MN_IPV4_ADDRESS}}:9443/cpi/alexserv?li=*' where name = 'alexservlet.cpi.link';
 {% if db_txt %}
 \q
 exit
