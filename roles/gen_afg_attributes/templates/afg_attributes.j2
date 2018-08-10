@@ -2,7 +2,7 @@
 
 {% for group, attributes in afg_attributes.iteritems()|sort %}
 #{{group}}#
-{% for key, value in attributes.iteritems()|sort %}
+{% for key, value in attributes.iteritems()|sort(reverse=True) %}
 msaconfigctrl.sh -g {{ CLUSTER_ID }} set {{key}} '{{value}}'
 {% endfor%}
 
