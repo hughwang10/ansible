@@ -1,15 +1,8 @@
 ---
 - name: Gen AFG attributes command file at {{ output_dir }}
-  template: 
-    src: afg_database.j2 
-    dest: "{{output_dir}}/afg.sql" 
+  template:
+    src: afg_database.j2
+    dest: "{{output_dir}}/afg.sql.txt"
     mode: 0644
-  when: not db_txt
-
-- name: Gen AFG attributes command file at {{ output_dir }}
-  template: 
-    src: afg_database.j2 
-    dest: "{{output_dir}}/afg.sql.txt" 
-    mode: 0644
-  when: db_txt  
+  tags: always
 

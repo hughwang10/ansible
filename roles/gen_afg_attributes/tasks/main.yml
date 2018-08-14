@@ -1,4 +1,5 @@
 ---
 - name: Gen AFG attributes command file
   template: src=afg_attributes.j2 dest="{{output_dir}}/afg_attributes.txt" mode=0755
+  tags: always
 

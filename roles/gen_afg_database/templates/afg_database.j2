@@ -1,9 +1,7 @@
-{% if db_txt %}
 # Start #
 su -s /bin/bash - msausr -c "bash"
 PGPASSWORD=wapwap12 psql -U msa
 \set ON_ERROR_STOP 1
-{% endif %}
 {% if afg_psql_database.NAF is defined %}
 delete from NAF;
 {% for item in afg_psql_database.NAF %}
@@ -49,8 +47,6 @@ INSERT INTO XDMSPOOLMAP (XDMSPOOLID, XDMSERVERID, PRIORITY) VALUES ({{ 100 + poo
 INSERT INTO AUIDXDMSPOOLMAP (AUIDNAME, XDMSPOOLID, USERGROUP) VALUES ('{{auid_name.auid}}',{{100 + auid_name.pool_id}},'{{auid_name.usergroup}}');
 {% endfor %}
 UPDATE msaconfig SET value = 'https://{{OAM_MN_IPV4_ADDRESS}}:9443/cpi/alexserv?li=*' where name = 'alexservlet.cpi.link';
-{% if db_txt %}
 \q
 exit
 # Done! #
-{% endif %}
