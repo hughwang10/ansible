@@ -13,7 +13,13 @@ delete from DIAMETERPEERLIST;
 delete from DIAMETERROUTE;
 select setval('diameterpeerseq',99);
 {% for item in afg_psql_database.Diameter.Peers %}
+{% if DiameterSCTP is not defined %}
 insert into DIAMETERPEER (diameterpeerseq,peerdisplayname,hostname,address,port,timeout) values (nextval('diameterpeerseq'),'{{item.DisplayName}}','{{item.HostName}}','{{item.IPAddress}}',{{item.Port}},{{item.Timeout}});
+{% elif DiameterSCTP %}
+insert into DIAMETERPEER (diameterpeerseq,peerdisplayname,hostname,address,port,timeout,protocol) values (nextval('diameterpeerseq'),'{{item.DisplayName}}','{{item.HostName}}','{{item.IPAddress}}',{{item.Port}},{{item.Timeout}},'SCTP');
+{% else %}
+insert into DIAMETERPEER (diameterpeerseq,peerdisplayname,hostname,address,port,timeout,protocol) values (nextval('diameterpeerseq'),'{{item.DisplayName}}','{{item.HostName}}','{{item.IPAddress}}',{{item.Port}},{{item.Timeout}},'TCP');
+{% endif %}
 {% endfor%}
 select setval('diameterpeerlistseq',99);
 select setval('diameterrouteseq',99);
